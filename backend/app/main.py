@@ -3,9 +3,8 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 
-from flask_jwt_extended import JWTManager
-from app.extensions import db as db_module   # ✅ import MODULE, not variable
 from app.extensions.db import init_db
+from flask_jwt_extended import JWTManager
 
 load_dotenv()
 
@@ -16,19 +15,24 @@ def create_app():
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
     app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 
-    CORS(app)
-    JWTManager(app)
+    # 🔥 THIS LINE IS CRITICAL
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": "http://localhost:5173"}},
+        supports_credentials=True,
+    )
 
+    JWTManager(app)
     init_db(app)
 
     from app.routes.auth_routes import auth_bp
+    from app.routes.resume_routes import resume_bp
+
     app.register_blueprint(auth_bp)
+    app.register_blueprint(resume_bp)
 
     @app.route("/health")
     def health():
-        return {
-            "status": "ok",
-            "collections": db_module.db.list_collection_names()
-        }
+        return {"status": "ok"}
 
     return app

@@ -2,31 +2,37 @@ import { Routes, Route, Navigate } from "react-router-dom"
 
 import Login from "../pages/auth/Login"
 import Register from "../pages/auth/Register"
-
 import ProtectedRoute from "./ProtectedRoute"
 
+import JobSeekerLayout from "../components/layout/JobSeekerLayout"
 import JobSeekerDashboard from "../pages/jobseeker/Dashboard"
-// (later we’ll add recruiter/admin dashboards here)
+import Resumes from "../pages/jobseeker/Resumes"
+
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Default route */}
-      <Route path="/" element={<Navigate to="/login" />} />
-
-      {/* Public routes */}
+      {/* Public */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected Job Seeker route */}
+      {/* Job Seeker Protected Layout */}
       <Route
-        path="/jobseeker/dashboard"
-        element={
-          <ProtectedRoute role="job_seeker">
-            <JobSeekerDashboard />
-          </ProtectedRoute>
-        }
-      />
+  path="/jobseeker"
+  element={
+    <ProtectedRoute role="job_seeker">
+      <JobSeekerLayout />
+    </ProtectedRoute>
+  }
+>
+  <Route path="dashboard" element={<JobSeekerDashboard />} />
+  <Route path="resumes" element={<Resumes />} />
+</Route>
+
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
 }
