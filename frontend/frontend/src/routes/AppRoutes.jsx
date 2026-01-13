@@ -7,7 +7,9 @@ import ProtectedRoute from "./ProtectedRoute"
 import JobSeekerLayout from "../components/layout/JobSeekerLayout"
 import JobSeekerDashboard from "../pages/jobseeker/Dashboard"
 import Resumes from "../pages/jobseeker/Resumes"
-import Profile from "../pages/jobseeker/Profile"
+
+import RecruiterLayout from "../components/layout/RecruiterLayout"
+import RecruiterDashboard from "../pages/recruiter/Dashboard"
 
 export default function AppRoutes() {
   return (
@@ -17,7 +19,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Job Seeker Protected Layout */}
+      {/* Job Seeker */}
       <Route
         path="/jobseeker"
         element={
@@ -28,7 +30,18 @@ export default function AppRoutes() {
       >
         <Route path="dashboard" element={<JobSeekerDashboard />} />
         <Route path="resumes" element={<Resumes />} />
-        <Route path="profile" element={<Profile />} />
+      </Route>
+
+      {/* Recruiter */}
+      <Route
+        path="/recruiter"
+        element={
+          <ProtectedRoute role="recruiter">
+            <RecruiterLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<RecruiterDashboard />} />
       </Route>
 
       {/* Fallback */}

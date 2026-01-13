@@ -28,9 +28,15 @@ def create_app():
     from app.routes.auth_routes import auth_bp
     from app.routes.resume_routes import resume_bp
     from app.routes.profile_routes import profile_bp
+    from app.routes.recruiter_profile_routes import recruiter_profile_bp
+    from app.routes.job_routes import job_bp
+
     app.register_blueprint(profile_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(resume_bp)
+    app.register_blueprint(recruiter_profile_bp)
+    app.register_blueprint(job_bp)
+
 
     @app.route("/health")
     def health():

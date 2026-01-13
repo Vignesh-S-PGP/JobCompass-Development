@@ -12,40 +12,38 @@ export default function Login() {
   const [error, setError] = useState("")
 
   const handleLogin = async (e) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
+  e.preventDefault()
+  setError("")
+  setLoading(true)
 
-    try {
-      const res = await api.post("/auth/login", {
-        email,
-        password,
-      })
+  try {
+    const res = await api.post("/auth/login", {
+      email,
+      password,
+    })
 
-      // Save token
-      localStorage.setItem("token", res.data.accessToken)
+    // Save token
+    localStorage.setItem("token", res.data.accessToken)
 
-      // Temporary redirect (role-based next)
-     
+    // Decode user from token
+  const user = getUserFromToken()
 
-    const user = getUserFromToken()
+if (user.role === "job_seeker") {
+  navigate("/jobseeker/dashboard")
+}
 
-    if (user.role === "job_seeker") {
-    navigate("/jobseeker/dashboard")
-    } else if (user.role === "recruiter") {
-    navigate("/recruiter/dashboard")
-    } else if (user.role === "admin") {
-    navigate("/admin/dashboard")
-    }
+if (user.role === "recruiter") {
+  navigate("/recruiter/dashboard")
+}
 
-    } catch (err) {
-      setError(
-        err.response?.data?.error || "Login failed"
-      )
-    } finally {
-      setLoading(false)
-    }
+
+  } catch (err) {
+    setError(err.response?.data?.error || "Login failed")
+  } finally {
+    setLoading(false)
   }
+}
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100">
