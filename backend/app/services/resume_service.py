@@ -9,23 +9,21 @@ UPLOAD_FOLDER = "uploads/resumes"
 
 
 def upload_resume(file):
-    if not file or file.filename == "":
-        return False, "No file selected"
+    if not file:
+        return False, "No file provided"
 
     if not file.filename.lower().endswith(".pdf"):
-        return False, "Only PDF files allowed"
+        return False, "Only PDF files are allowed"
 
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-    user_id = ObjectId(get_jwt_identity())
+    user_id = get_jwt_identity()
 
     filename = secure_filename(file.filename)
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-    # 1️⃣ Save file
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(file_path)
 
-    # 2️⃣ Extract text
+    # ✅ Extract raw text ONLY
     raw_text = extract_text_from_pdf(file_path)
 
     resume_doc = {
@@ -33,10 +31,11 @@ def upload_resume(file):
         "filename": filename,
         "filePath": file_path,
         "rawText": raw_text,
-        "analysis": {}
+        "analysis": {},  # empty for now
+        "uploadedAt": datetime.utcnow()
     }
 
-    create_resume(resume_doc)
+    mongo.db.resumes.insert_one(resume_doc)
 
     return True, None
 

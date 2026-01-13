@@ -7,7 +7,7 @@ import ProtectedRoute from "./ProtectedRoute"
 import JobSeekerLayout from "../components/layout/JobSeekerLayout"
 import JobSeekerDashboard from "../pages/jobseeker/Dashboard"
 import Resumes from "../pages/jobseeker/Resumes"
-
+import Profile from "../pages/jobseeker/Profile"
 
 export default function AppRoutes() {
   return (
@@ -19,17 +19,17 @@ export default function AppRoutes() {
 
       {/* Job Seeker Protected Layout */}
       <Route
-  path="/jobseeker"
-  element={
-    <ProtectedRoute role="job_seeker">
-      <JobSeekerLayout />
-    </ProtectedRoute>
-  }
->
-  <Route path="dashboard" element={<JobSeekerDashboard />} />
-  <Route path="resumes" element={<Resumes />} />
-</Route>
-
+        path="/jobseeker"
+        element={
+          <ProtectedRoute role="job_seeker">
+            <JobSeekerLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<JobSeekerDashboard />} />
+        <Route path="resumes" element={<Resumes />} />
+        <Route path="profile" element={<Profile />} />
+      </Route>
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />

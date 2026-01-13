@@ -24,21 +24,33 @@ export default function JobSeekerLayout() {
             Dashboard
           </button>
 
-          <button className="w-full text-left px-4 py-2 rounded hover:bg-gray-800">
+          <button
+            onClick={() => navigate("/jobseeker/profile")}
+            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
+          >
+            Profile
+          </button>
+
+          <button
+            onClick={() => navigate("/jobseeker/jobs")}
+            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
+          >
             Jobs
           </button>
 
-          <button className="w-full text-left px-4 py-2 rounded hover:bg-gray-800">
+          <button
+            onClick={() => navigate("/jobseeker/applications")}
+            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
+          >
             Applications
           </button>
 
-         <button
-  onClick={() => navigate("/jobseeker/resumes")}
-  className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
->
-  Resumes
-</button>
-
+          <button
+            onClick={() => navigate("/jobseeker/resumes")}
+            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
+          >
+            Resumes
+          </button>
         </nav>
 
         <div className="p-4 border-t border-gray-700">
