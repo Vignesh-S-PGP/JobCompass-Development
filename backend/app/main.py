@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
+from flask_cors import CORS
 
 from app.extensions.db import init_db
 from flask_jwt_extended import JWTManager
@@ -30,12 +31,15 @@ def create_app():
     from app.routes.profile_routes import profile_bp
     from app.routes.recruiter_profile_routes import recruiter_profile_bp
     from app.routes.job_routes import job_bp
-
+    from app.routes.company_routes import company_bp
+    from app.routes.job_feed_routes import job_feed_bp
     app.register_blueprint(profile_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(resume_bp)
     app.register_blueprint(recruiter_profile_bp)
     app.register_blueprint(job_bp)
+    app.register_blueprint(company_bp)
+    app.register_blueprint(job_feed_bp)
 
 
     @app.route("/health")

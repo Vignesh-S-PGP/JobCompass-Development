@@ -1,23 +1,26 @@
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required, get_jwt
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions.db import mongo
-from datetime import datetime
 from bson import ObjectId
+from datetime import datetime
 
 job_bp = Blueprint("jobs", __name__, url_prefix="/api/jobs")
+
 @job_bp.route("", methods=["POST"])
 @jwt_required()
 def create_job():
-    claims = get_jwt()
-
-    if claims.get("role") != "recruiter":
-        return {"error": "Unauthorized"}, 403
-
+    user_id = get_jwt_identity()
     data = request.json
 
+    # 🔥 find company owned by recruiter
+    company = mongo.db.companies.find_one(
+        {"ownerId": ObjectId(user_id)}
+    )
+
+    if not company:
+        return {"error": "Company not found. Create company first."}, 400
+
     job = {
-        "recruiterId": ObjectId(claims["sub"]),
-        "companyName": data.get("companyName"),
         "title": data.get("title"),
         "description": data.get("description"),
         "skillsRequired": data.get("skillsRequired", []),
@@ -25,43 +28,46 @@ def create_job():
         "location": data.get("location"),
         "jobType": data.get("jobType"),
         "salaryRange": data.get("salaryRange"),
-        "status": "active",
+        "companyId": company["_id"],
+        "createdBy": ObjectId(user_id),
         "createdAt": datetime.utcnow(),
-        "updatedAt": datetime.utcnow()
+        "status": "active"
     }
 
     mongo.db.jobs.insert_one(job)
-    return {"message": "Job posted successfully"}, 201
-@job_bp.route("/my", methods=["GET"])
-@jwt_required()
-def get_my_jobs():
-    claims = get_jwt()
 
-    if claims.get("role") != "recruiter":
-        return {"error": "Unauthorized"}, 403
+    return {"message": "Job created successfully"}, 201
 
-    jobs = list(
-        mongo.db.jobs.find(
-            {"recruiterId": ObjectId(claims["sub"])},
-            {"recruiterId": 0}
-        )
-    )
 
-    for job in jobs:
-        job["_id"] = str(job["_id"])
-
-    return {"jobs": jobs}, 200
 @job_bp.route("", methods=["GET"])
-@jwt_required(optional=True)
-def get_jobs():
-    jobs = list(
-        mongo.db.jobs.find(
-            {"status": "active"},
-            {"recruiterId": 0}
-        )
-    )
-
-    for job in jobs:
-        job["_id"] = str(job["_id"])
-
+def list_jobs():
+    jobs = list(mongo.db.jobs.find({}, {"_id": 0}))
     return {"jobs": jobs}, 200
+
+@job_bp.route("/recommended", methods=["GET"])
+@jwt_required()
+def recommended_jobs():
+    user_id = get_jwt_identity()
+
+    profile = mongo.db.jobseeker_profiles.find_one({"userId": ObjectId(user_id)})
+    if not profile:
+        return {"jobs": []}
+
+    # 🔥 Normalize profile skills
+    profile_skills = []
+    for s in profile.get("skills", []):
+        profile_skills.extend([x.strip().lower() for x in s.split(",")])
+
+    matched = []
+
+    for job in mongo.db.jobs.find({"status": "active"}):
+        job_skills = []
+        for s in job.get("skillsRequired", []):
+            job_skills.extend([x.strip().lower() for x in s.split(",")])
+
+        if set(profile_skills) & set(job_skills):
+            job["_id"] = str(job["_id"])
+            matched.append(job)
+
+    return {"jobs": matched}, 200
+

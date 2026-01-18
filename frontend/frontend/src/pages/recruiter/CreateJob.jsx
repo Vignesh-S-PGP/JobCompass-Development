@@ -1,9 +1,8 @@
 import { useState } from "react"
-import jobService from "../../services/jobService"
+import api from "../../services/api"
 
 export default function CreateJob() {
   const [form, setForm] = useState({
-    companyName: "",
     title: "",
     description: "",
     skillsRequired: "",
@@ -13,67 +12,37 @@ export default function CreateJob() {
     salaryRange: ""
   })
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  const submitJob = async () => {
-    const payload = {
-      ...form,
-      skillsRequired: form.skillsRequired.split(",").map(s => s.trim())
-    }
+const handleSubmit = async e => {
+  e.preventDefault()
 
-    try {
-      await jobService.createJob(payload)
-      alert("Job posted successfully")
-      setForm({})
-    } catch (err) {
-      alert("Failed to post job")
-    }
-  }
+  await api.post("/jobs", {
+    ...form,
+    skillsRequired: form.skillsRequired
+      .split(",")
+      .map(s => s.trim())
+  })
+
+  alert("Job created")
+}
+
 
   return (
-    <div className="max-w-3xl mx-auto bg-white p-6 rounded shadow">
-      <h2 className="text-2xl font-bold mb-4">Post New Job</h2>
+    <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
+      <h1 className="text-xl font-bold">Create Job</h1>
 
-      {[
-        ["companyName", "Company Name"],
-        ["title", "Job Title"],
-        ["experience", "Experience"],
-        ["location", "Location"],
-        ["jobType", "Job Type"],
-        ["salaryRange", "Salary Range"]
-      ].map(([name, label]) => (
-        <input
-          key={name}
-          name={name}
-          placeholder={label}
-          onChange={handleChange}
-          className="w-full border p-2 mb-3 rounded"
-        />
-      ))}
+      <input name="title" placeholder="Job title" onChange={handleChange} className="w-full border p-2" />
+      <textarea name="description" placeholder="Description" onChange={handleChange} className="w-full border p-2" />
+      <input name="skillsRequired" placeholder="Skills (comma separated)" onChange={handleChange} className="w-full border p-2" />
+      <input name="experience" placeholder="Experience" onChange={handleChange} className="w-full border p-2" />
+      <input name="location" placeholder="Location" onChange={handleChange} className="w-full border p-2" />
+      <input name="jobType" placeholder="Job Type" onChange={handleChange} className="w-full border p-2" />
+      <input name="salaryRange" placeholder="Salary" onChange={handleChange} className="w-full border p-2" />
 
-      <textarea
-        name="description"
-        placeholder="Job Description"
-        onChange={handleChange}
-        className="w-full border p-2 mb-3 rounded"
-        rows={4}
-      />
-
-      <input
-        name="skillsRequired"
-        placeholder="Skills (comma separated)"
-        onChange={handleChange}
-        className="w-full border p-2 mb-3 rounded"
-      />
-
-      <button
-        onClick={submitJob}
-        className="bg-black text-white px-6 py-2 rounded"
-      >
-        Post Job
-      </button>
-    </div>
+      <button className="bg-black text-white px-4 py-2 rounded">Create Job</button>
+    </form>
   )
 }

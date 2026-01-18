@@ -32,18 +32,12 @@ export default function JobSeekerLayout() {
           </button>
 
           <button
-            onClick={() => navigate("/jobseeker/jobs")}
-            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
-          >
-            Jobs
-          </button>
+  onClick={() => navigate("/jobseeker/jobs")}
+  className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
+>
+  Jobs
+</button>
 
-          <button
-            onClick={() => navigate("/jobseeker/applications")}
-            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
-          >
-            Applications
-          </button>
 
           <button
             onClick={() => navigate("/jobseeker/resumes")}

@@ -6,9 +6,14 @@ export function getUserFromToken() {
 
   try {
     const decoded = jwtDecode(token)
+
+    if (decoded.exp * 1000 < Date.now()) {
+      localStorage.removeItem("token")
+      return null
+    }
+
     return decoded
-  } catch (error) {
-    console.error("Invalid token", error)
+  } catch {
     return null
   }
 }

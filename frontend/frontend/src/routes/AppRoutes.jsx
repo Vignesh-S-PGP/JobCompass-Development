@@ -10,6 +10,12 @@ import Resumes from "../pages/jobseeker/Resumes"
 
 import RecruiterLayout from "../components/layout/RecruiterLayout"
 import RecruiterDashboard from "../pages/recruiter/Dashboard"
+import CreateJob from "../pages/recruiter/CreateJob"
+import RecruiterJobs from "../pages/recruiter/Jobs"
+import Company from "../pages/recruiter/Company"
+import Jobs from "../pages/jobseeker/Jobs"
+import Profile from "../pages/jobseeker/Profile"
+
 
 export default function AppRoutes() {
   return (
@@ -20,29 +26,27 @@ export default function AppRoutes() {
       <Route path="/register" element={<Register />} />
 
       {/* Job Seeker */}
-      <Route
-        path="/jobseeker"
-        element={
-          <ProtectedRoute role="job_seeker">
-            <JobSeekerLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="dashboard" element={<JobSeekerDashboard />} />
-        <Route path="resumes" element={<Resumes />} />
-      </Route>
+      {/* Job Seeker */}
+<Route element={<ProtectedRoute role="job_seeker" />}>
+  <Route path="/jobseeker" element={<JobSeekerLayout />}>
+    <Route path="dashboard" element={<JobSeekerDashboard />} />
+    <Route path="resumes" element={<Resumes />} />
+    <Route path="profile" element={<Profile />} />
+    <Route path="jobs" element={<Jobs />} />
+  </Route>
+</Route>
+
 
       {/* Recruiter */}
-      <Route
-        path="/recruiter"
-        element={
-          <ProtectedRoute role="recruiter">
-            <RecruiterLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="dashboard" element={<RecruiterDashboard />} />
-      </Route>
+      <Route element={<ProtectedRoute role="recruiter" />}>
+  <Route path="/recruiter" element={<RecruiterLayout />}>
+    <Route path="dashboard" element={<RecruiterDashboard />} />
+    <Route path="company" element={<Company />} />
+    <Route path="jobs/create" element={<CreateJob />} />
+    <Route path="jobs" element={<RecruiterJobs />} />
+  </Route>
+</Route>
+
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />

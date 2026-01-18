@@ -26,15 +26,14 @@ export default function Login() {
     localStorage.setItem("token", res.data.accessToken)
 
     // Decode user from token
-  const user = getUserFromToken()
+const user = getUserFromToken()
 
 if (user.role === "job_seeker") {
   navigate("/jobseeker/dashboard")
-}
-
-if (user.role === "recruiter") {
+} else if (user.role === "recruiter") {
   navigate("/recruiter/dashboard")
 }
+
 
 
   } catch (err) {
