@@ -9,11 +9,8 @@ export default function RecruiterJobs() {
   useEffect(() => {
     api.get("/jobs/recruiter")
       .then(res => {
-        const fixed = res.data.jobs.map(j => ({
-          ...j,
-          jobId: j._id?.$oid || j._id
-        }))
-        setJobs(fixed)
+        // ✅ backend already returns string _id
+        setJobs(res.data.jobs)
       })
       .catch(err => console.error(err))
   }, [])
@@ -25,13 +22,19 @@ export default function RecruiterJobs() {
       {jobs.length === 0 && <p>No jobs posted yet</p>}
 
       {jobs.map(job => (
-        <div key={job.jobId} className="border p-4 mb-3 rounded shadow">
+        <div
+          key={job._id}
+          className="border p-4 mb-3 rounded shadow"
+        >
           <h2 className="font-semibold text-lg">{job.title}</h2>
           <p>{job.location}</p>
 
           <button
             className="mt-2 bg-blue-600 text-white px-3 py-1 rounded"
-            onClick={() => navigate(`/recruiter/jobs/${job.jobId}/applicants`)}
+            onClick={() => {
+              console.log("➡️ navigating with jobId =", job._id)
+              navigate(`/recruiter/jobs/${job._id}/applicants`)
+            }}
           >
             View Applicants
           </button>

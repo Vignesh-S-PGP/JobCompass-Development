@@ -17,21 +17,42 @@ export default function RecruiterLayout() {
         navigate("/login")
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [navigate])
 
-  if (loading) return <div>Loading...</div>
+  if (loading) {
+    return <div className="p-6 text-lg">Loading...</div>
+  }
 
   return (
     <div className="min-h-screen flex bg-gray-100">
+
+      {/* Sidebar */}
       <aside className="w-64 bg-black text-white flex flex-col">
         <div className="p-6 text-xl font-bold border-b border-gray-700">
           JobCompass Recruiter
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          <button onClick={() => navigate("/recruiter/dashboard")} className="w-full text-left px-4 py-2 rounded hover:bg-gray-800">Dashboard</button>
-          <button onClick={() => navigate("/recruiter/jobs/create")} className="w-full text-left px-4 py-2 rounded hover:bg-gray-800">Create Job</button>
-          <button onClick={() => navigate("/recruiter/jobs")} className="w-full text-left px-4 py-2 rounded hover:bg-gray-800">Jobs</button>
+          <button
+            onClick={() => navigate("/recruiter/dashboard")}
+            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
+          >
+            Dashboard
+          </button>
+
+          <button
+            onClick={() => navigate("/recruiter/jobs/create")}
+            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
+          >
+            Create Job
+          </button>
+
+          <button
+            onClick={() => navigate("/recruiter/jobs")}
+            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
+          >
+            Jobs
+          </button>
         </nav>
 
         <div className="p-4 border-t border-gray-700">
@@ -47,9 +68,11 @@ export default function RecruiterLayout() {
         </div>
       </aside>
 
+      {/* Main content (IMPORTANT) */}
       <main className="flex-1 p-6">
-        <Outlet />
+        <Outlet /> {/* ✅ REQUIRED FOR useParams() TO WORK */}
       </main>
+
     </div>
   )
 }

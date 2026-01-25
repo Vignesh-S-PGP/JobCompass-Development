@@ -71,3 +71,15 @@ def recommended_jobs():
 
     return {"jobs": matched}, 200
 
+@job_bp.route("/recruiter", methods=["GET"])
+@jwt_required()
+def recruiter_jobs():
+    user_id = get_jwt_identity()
+
+    jobs = []
+    for j in mongo.db.jobs.find({"createdBy": ObjectId(user_id)}):
+        j["_id"] = str(j["_id"])
+        jobs.append(j)
+
+    return {"jobs": jobs}, 200
+
