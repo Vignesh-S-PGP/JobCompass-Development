@@ -4,9 +4,10 @@ from werkzeug.utils import secure_filename
 from flask_jwt_extended import get_jwt_identity
 from app.models.resume_model import create_resume, get_resumes_by_user
 from app.utils.pdf_extractor import extract_text_from_pdf
+from datetime import datetime
+from app.extensions.db import mongo   # 🔥 ADD THIS LINE
 
 UPLOAD_FOLDER = "uploads/resumes"
-
 
 def upload_resume(file):
     if not file:
@@ -23,22 +24,21 @@ def upload_resume(file):
     file_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(file_path)
 
-    # ✅ Extract raw text ONLY
+    # Extract text
     raw_text = extract_text_from_pdf(file_path)
 
     resume_doc = {
-        "userId": user_id,
+        "userId": ObjectId(user_id),   # 🔥 FIXED (important)
         "filename": filename,
         "filePath": file_path,
         "rawText": raw_text,
-        "analysis": {},  # empty for now
+        "analysis": {},
         "uploadedAt": datetime.utcnow()
     }
 
     mongo.db.resumes.insert_one(resume_doc)
 
     return True, None
-
 
 
 def fetch_user_resumes():
