@@ -3,7 +3,7 @@ import json
 import re
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "llama3.1:8b-instruct-q4_K_M"
+MODEL = "phi3:mini"
 
 def calculate_ats_score(job_desc: str, resume_text: str):
     prompt = f"""
@@ -47,7 +47,7 @@ Return ONLY valid JSON in this format:
     }
 
     try:
-        res = requests.post(OLLAMA_URL, json=payload, timeout=180)
+        res = requests.post(OLLAMA_URL, json=payload, timeout=300)
         data = res.json()
 
         raw = data.get("response", "")

@@ -19,24 +19,90 @@ export default function RecruiterJobs() {
   }, [])
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">My Jobs</h1>
+    <div className="p-6 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">My Job Openings</h1>
 
-      {jobs.length === 0 && <p>No jobs posted yet</p>}
+        <button
+          onClick={() => navigate("/recruiter/jobs/create")}
+          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-900"
+        >
+          + Post New Job
+        </button>
+      </div>
 
-      {jobs.map(job => (
-        <div key={job.jobId} className="border p-4 mb-3 rounded shadow">
-          <h2 className="font-semibold text-lg">{job.title}</h2>
-          <p>{job.location}</p>
-
+      {/* Empty State */}
+      {jobs.length === 0 && (
+        <div className="bg-white rounded-lg shadow p-10 text-center">
+          <p className="text-gray-600 text-lg mb-4">
+            You haven’t posted any jobs yet.
+          </p>
           <button
-            className="mt-2 bg-blue-600 text-white px-3 py-1 rounded"
-            onClick={() => navigate(`/recruiter/jobs/${job.jobId}/applicants`)}
+            onClick={() => navigate("/recruiter/jobs/create")}
+            className="bg-blue-600 text-white px-5 py-2 rounded"
           >
-            View Applicants
+            Create Your First Job
           </button>
         </div>
-      ))}
+      )}
+
+      {/* Job Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {jobs.map(job => (
+          <div
+            key={job.jobId}
+            className="bg-white rounded-lg shadow hover:shadow-lg transition p-5 border"
+          >
+            {/* Title */}
+            <h2 className="text-lg font-semibold mb-1">
+              {job.title}
+            </h2>
+
+            {/* Location */}
+            <p className="text-sm text-gray-500 mb-3">
+              📍 {job.location}
+            </p>
+
+            {/* Meta */}
+            <div className="flex flex-wrap gap-2 text-sm mb-4">
+              {job.jobType && (
+                <span className="px-2 py-1 bg-gray-100 rounded">
+                  {job.jobType}
+                </span>
+              )}
+
+              {job.experience && (
+                <span className="px-2 py-1 bg-gray-100 rounded">
+                  {job.experience} yrs
+                </span>
+              )}
+
+              {job.salaryRange && (
+                <span className="px-2 py-1 bg-gray-100 rounded">
+                  ₹ {job.salaryRange}
+                </span>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() =>
+                  navigate(`/recruiter/jobs/${job.jobId}/applicants`)
+                }
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                View Applicants
+              </button>
+
+              <span className="text-xs text-green-600 font-semibold">
+                ● Active
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

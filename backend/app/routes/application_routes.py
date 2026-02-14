@@ -43,9 +43,16 @@ def apply_job():
     mongo.db.applications.insert_one(app)
 
     return {
-        "message": "Applied successfully",
-        "atsScore": ats["score"]
-    }, 201
+    "message": "Applied successfully",
+    "atsScore": ats["score"],
+    "ats": {
+        "score": ats["score"],
+        "matched_skills": ats.get("matched_skills", []),
+        "missing_skills": ats.get("missing_skills", []),
+        "reason": ats.get("reason", "")
+    }
+}, 201
+
 
 
 # 2️⃣ GET APPLICANTS (SORTED BY ATS SCORE)
