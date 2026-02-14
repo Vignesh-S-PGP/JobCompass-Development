@@ -21,32 +21,30 @@ export default function Applicants() {
       {apps.length === 0 && <p>No applicants yet</p>}
 
       {apps.map(a => (
-        <div
-          key={a.applicationId}
-          className="border p-4 mb-3 rounded shadow"
-        >
-          <p><b>Email:</b> {a.user?.email}</p>
-          <p><b>Resume:</b> {a.resume?.filename}</p>
+  <div key={a.applicationId} className="border p-4 mb-3 rounded shadow">
+    <p><b>Email:</b> {a.user?.email}</p>
+    <p><b>Resume:</b> {a.resume?.filename}</p>
 
-          <p className="text-green-700 font-bold">
-            ATS Score: {a.atsScore}%
-          </p>
+    <p className="text-green-700 font-bold">
+      ATS Score: {a.atsScore}%
+    </p>
 
-          <p className="text-sm text-gray-600">
-            {a.ats?.summary}
-          </p>
+    <p className="text-sm text-gray-600">
+      {a.ats?.reason}
+    </p>
 
-          <div className="mt-2">
-            <button className="bg-green-600 text-white px-3 py-1 rounded">
-              Shortlist
-            </button>
+    <div className="mt-2">
+      <button className="bg-green-600 text-white px-3 py-1 rounded">
+        Shortlist
+      </button>
 
-            <button className="bg-red-600 text-white px-3 py-1 ml-2 rounded">
-              Reject
-            </button>
-          </div>
-        </div>
-      ))}
+      <button className="bg-red-600 text-white px-3 py-1 ml-2 rounded">
+        Reject
+      </button>
+    </div>
+  </div>
+))}
+
     </div>
   )
 }

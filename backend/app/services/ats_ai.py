@@ -3,13 +3,22 @@ import json
 import re
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "phi3:mini"
-
+MODEL = "llama3.1:8b-instruct-q4_K_M"
 
 def calculate_ats_score(job_desc: str, resume_text: str):
     prompt = f"""
-You are an ATS system.
-Return ONLY valid JSON.
+You are a strict Applicant Tracking System (ATS).
+
+You MUST calculate a NUMERIC score.
+Different resumes MUST produce different scores.
+
+SCORING RULES:
+- Start from 100
+- Deduct points for:
+  - Missing required skills (10–20 each)
+  - Weak experience (5–15)
+  - Irrelevant content (5–10)
+- Final score MUST reflect deductions
 
 Job Description:
 {job_desc}
@@ -17,31 +26,40 @@ Job Description:
 Resume:
 {resume_text}
 
-JSON format:
+Return ONLY valid JSON in this format:
+
 {{
-  "score": number between 0 and 100,
-  "reason": "short explanation"
+  "score": <integer between 0 and 100>,
+  "matched_skills": ["..."],
+  "missing_skills": ["..."],
+  "reason": "Explain deductions clearly"
 }}
 """
 
     payload = {
         "model": MODEL,
         "prompt": prompt,
-        "stream": False
+        "stream": False,
+        "options": {
+            "temperature": 0.1,
+            "top_p": 0.9
+        }
     }
 
     try:
-        res = requests.post(OLLAMA_URL, json=payload, timeout=120)
+        res = requests.post(OLLAMA_URL, json=payload, timeout=180)
         data = res.json()
 
         raw = data.get("response", "")
+        print("\n🧠 RAW AI RESPONSE:\n", raw)
 
-        # 🔥 extract JSON from text
         match = re.search(r"\{.*\}", raw, re.S)
         if not match:
-            raise ValueError("No JSON found in response")
+            raise ValueError("No JSON found")
 
         ats = json.loads(match.group())
+        ats["score"] = max(0, min(100, int(ats["score"])))
+
         return ats
 
     except Exception as e:
@@ -50,3 +68,4 @@ JSON format:
             "score": 0,
             "reason": "AI scoring failed"
         }
+
