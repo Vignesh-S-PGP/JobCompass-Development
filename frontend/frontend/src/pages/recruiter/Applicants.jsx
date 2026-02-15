@@ -2,9 +2,146 @@ import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import api from "../../services/api"
 
+/* =========================
+   📄 Resume + ATS Modal
+========================= */
+function ResumeReviewModal({ app, onClose }) {
+  const [pdfUrl, setPdfUrl] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!app) return
+
+    // ✅ SAFELY EXTRACT RESUME ID
+    let resumeId = null
+
+    if (typeof app.resumeId === "string") {
+      resumeId = app.resumeId
+    } else if (typeof app.resume === "string") {
+      resumeId = app.resume
+    } else if (app.resume?._id) {
+      resumeId =
+        typeof app.resume._id === "string"
+          ? app.resume._id
+          : app.resume._id.$oid
+    }
+
+    console.log("📄 RESUME ID =", resumeId)
+
+    if (!resumeId) {
+      setError("Resume ID missing")
+      return
+    }
+
+    setPdfUrl(null)
+    setError(null)
+
+    api
+      .get(`/resumes/view-token/${resumeId}`)
+      .then(res => {
+        const token = res.data.token
+        setPdfUrl(
+          `${import.meta.env.VITE_API_BASE_URL}/resumes/stream/${token}`
+        )
+      })
+      .catch(err => {
+        console.error("❌ Token fetch failed:", err)
+        setError("Unable to load resume PDF")
+      })
+  }, [app])
+
+  if (!app) return null
+
+  const ats = app.ats || {}
+  const matched = ats.matched_skills || []
+  const missing = ats.missing_skills || []
+
+  return (
+    <div className="fixed inset-0 bg-black/70 z-50 flex">
+
+      {/* LEFT — PDF VIEWER */}
+      <div className="w-3/5 bg-gray-100 p-4">
+        {error ? (
+          <div className="h-full flex items-center justify-center text-red-600">
+            {error}
+          </div>
+        ) : pdfUrl ? (
+          <iframe
+            src={pdfUrl}
+            className="w-full h-full rounded"
+            title="Resume"
+          />
+        ) : (
+          <div className="h-full flex items-center justify-center text-gray-500">
+            Loading resume…
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT — ATS DETAILS */}
+      <div className="w-2/5 bg-white p-6 overflow-y-auto">
+        <h2 className="text-xl font-bold mb-2">
+          ATS Evaluation
+        </h2>
+
+        <div className="text-4xl font-bold text-green-700 mb-4">
+          {app.atsScore}%
+        </div>
+
+        <section className="mb-4">
+          <h3 className="font-semibold mb-1">Matched Skills</h3>
+          {matched.length === 0 ? (
+            <p className="text-sm text-gray-500">None</p>
+          ) : (
+            <ul className="list-disc list-inside text-green-700 text-sm">
+              {matched.map((s, i) => <li key={i}>{s}</li>)}
+            </ul>
+          )}
+        </section>
+
+        <section className="mb-4">
+          <h3 className="font-semibold mb-1">Missing Skills</h3>
+          {missing.length === 0 ? (
+            <p className="text-sm text-gray-500">No major gaps</p>
+          ) : (
+            <ul className="list-disc list-inside text-red-600 text-sm">
+              {missing.map((s, i) => <li key={i}>{s}</li>)}
+            </ul>
+          )}
+        </section>
+
+        <p className="text-sm text-gray-600 mb-6">
+          {ats.reason}
+        </p>
+
+        <div className="flex gap-2">
+          <button className="flex-1 bg-green-600 text-white py-2 rounded">
+            Shortlist
+          </button>
+          <button className="flex-1 bg-red-600 text-white py-2 rounded">
+            Reject
+          </button>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="mt-4 w-full border py-2 rounded"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
+
+
+/* =========================
+   👥 Applicants Page
+========================= */
 export default function Applicants() {
   const { jobId } = useParams()
   const [apps, setApps] = useState([])
+  const [selectedApp, setSelectedApp] = useState(null)
 
   useEffect(() => {
     if (!jobId) return
@@ -15,36 +152,69 @@ export default function Applicants() {
   }, [jobId])
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Applicants (Ranked by AI)</h1>
+    <div className="p-6 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">
+        Applicants (AI Ranked)
+      </h1>
 
-      {apps.length === 0 && <p>No applicants yet</p>}
+      {apps.length === 0 && (
+        <p className="text-gray-500">No applicants yet</p>
+      )}
 
-      {apps.map(a => (
-  <div key={a.applicationId} className="border p-4 mb-3 rounded shadow">
-    <p><b>Email:</b> {a.user?.email}</p>
-    <p><b>Resume:</b> {a.resume?.filename}</p>
+      <div className="space-y-4">
+        {apps.map((a, index) => {
+          const name =
+            a.user?.fullName ||
+            a.user?.email?.split("@")[0] ||
+            "Candidate"
 
-    <p className="text-green-700 font-bold">
-      ATS Score: {a.atsScore}%
-    </p>
+          return (
+            <div
+              key={a.applicationId}
+              className="bg-white rounded-lg shadow p-4 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4">
+                <div className="text-lg font-bold text-gray-500">
+                  #{index + 1}
+                </div>
 
-    <p className="text-sm text-gray-600">
-      {a.ats?.reason}
-    </p>
+                <div>
+                  <p className="font-semibold">{name}</p>
+                  <p className="text-sm text-gray-500">
+                    AI Score
+                  </p>
+                </div>
+              </div>
 
-    <div className="mt-2">
-      <button className="bg-green-600 text-white px-3 py-1 rounded">
-        Shortlist
-      </button>
+              <div className="text-2xl font-bold text-green-700">
+                {a.atsScore}%
+              </div>
 
-      <button className="bg-red-600 text-white px-3 py-1 ml-2 rounded">
-        Reject
-      </button>
-    </div>
-  </div>
-))}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedApp(a)}
+                  className="border px-3 py-1 rounded hover:bg-gray-100"
+                >
+                  View Resume
+                </button>
 
+                <button className="bg-green-600 text-white px-3 py-1 rounded">
+                  Shortlist
+                </button>
+
+                <button className="bg-red-600 text-white px-3 py-1 rounded">
+                  Reject
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <ResumeReviewModal
+        app={selectedApp}
+        onClose={() => setSelectedApp(null)}
+      />
     </div>
   )
 }

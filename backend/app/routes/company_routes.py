@@ -6,6 +6,7 @@ from datetime import datetime
 
 company_bp = Blueprint("company", __name__, url_prefix="/api/company")
 
+
 # Get my company
 @company_bp.route("/my", methods=["GET"])
 @jwt_required()
@@ -31,7 +32,13 @@ def create_company():
         {"ownerId": ObjectId(user_id)},
         {
             "$set": {
-                **data,
+                "name": data.get("name"),
+                "industry": data.get("industry"),
+                "location": data.get("location"),
+                "size": data.get("size"),
+                "website": data.get("website"),
+                "about": data.get("about"),
+                "logo": data.get("logo"),   # 🔥 NEW
                 "updatedAt": datetime.utcnow()
             },
             "$setOnInsert": {

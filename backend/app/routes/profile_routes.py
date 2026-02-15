@@ -26,7 +26,7 @@ def save_profile():
     user_id = get_jwt_identity()
     data = request.json
 
-    if not data.get("skills") or not isinstance(data["skills"], list):
+    if not isinstance(data.get("skills", []), list):
         return {"error": "Skills must be an array"}, 400
 
     mongo.db.jobseeker_profiles.update_one(
@@ -39,6 +39,7 @@ def save_profile():
                 "experience": data.get("experience"),
                 "skills": data.get("skills"),
                 "bio": data.get("bio"),
+                "profileImage": data.get("profileImage"),  # 🔥 NEW
                 "updatedAt": datetime.utcnow()
             },
             "$setOnInsert": {

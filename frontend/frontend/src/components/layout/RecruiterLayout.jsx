@@ -41,17 +41,16 @@ export default function RecruiterLayout() {
           </button>
 
           <button
-            onClick={() => navigate("/recruiter/jobs/create")}
-            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
-          >
-            Create Job
-          </button>
-
-          <button
             onClick={() => navigate("/recruiter/jobs")}
             className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
           >
             Jobs
+          </button>
+          <button
+            onClick={() => navigate("/recruiter/company")}
+            className="w-full text-left px-4 py-2 rounded hover:bg-gray-800"
+          >
+            Company
           </button>
         </nav>
 
