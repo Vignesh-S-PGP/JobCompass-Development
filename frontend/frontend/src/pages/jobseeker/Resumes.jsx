@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import api from "../../services/api"
 import { uploadResume, getResumes } from "../../services/resumeService"
+import ResumePreviewModal from "./ResumePreviewModal"
 
 export default function Resumes() {
   const [file, setFile] = useState(null)
@@ -125,8 +126,14 @@ export default function Resumes() {
                   </p>
                   <p className="text-sm text-gray-500">
                     {resume.filename} •{" "}
-                    {resume.uploadedAt &&
-                      new Date(resume.uploadedAt).toLocaleDateString()}
+                    {resume.uploadedAt
+  ? new Date(resume.uploadedAt).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    })
+  : "—"}
+
                   </p>
                 </div>
 
@@ -153,26 +160,12 @@ export default function Resumes() {
 
       {/* PDF PREVIEW MODAL */}
       {previewId && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex">
-          <div className="w-full max-w-6xl bg-white m-auto rounded-lg overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="font-semibold">Resume Preview</h3>
-              <button
-                onClick={() => setPreviewId(null)}
-                className="text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <iframe
-              src={`${import.meta.env.VITE_API_BASE_URL}/resumes/view/${previewId}`}
-              className="w-full h-[80vh]"
-              title="Resume PDF"
-            />
-          </div>
-        </div>
+        <ResumePreviewModal
+          resumeId={previewId}
+          onClose={() => setPreviewId(null)}
+        />
       )}
+
     </div>
   )
 }

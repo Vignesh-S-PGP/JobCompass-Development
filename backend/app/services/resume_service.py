@@ -9,7 +9,7 @@ from app.extensions.db import mongo   # 🔥 ADD THIS LINE
 
 UPLOAD_FOLDER = "uploads/resumes"
 
-def upload_resume(file):
+def upload_resume(file, title=None):
     if not file:
         return False, "No file provided"
 
@@ -24,12 +24,12 @@ def upload_resume(file):
     file_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(file_path)
 
-    # Extract text
     raw_text = extract_text_from_pdf(file_path)
 
     resume_doc = {
-        "userId": ObjectId(user_id),   # 🔥 FIXED (important)
+        "userId": ObjectId(user_id),
         "filename": filename,
+        "title": title,                 # ✅ NOW STORED
         "filePath": file_path,
         "rawText": raw_text,
         "analysis": {},
@@ -37,10 +37,25 @@ def upload_resume(file):
     }
 
     mongo.db.resumes.insert_one(resume_doc)
-
     return True, None
 
 
 def fetch_user_resumes():
-    user_id = ObjectId(get_jwt_identity())
-    return get_resumes_by_user(user_id)
+    user_id = get_jwt_identity()
+    resumes = list(
+        mongo.db.resumes.find(
+            {"userId": ObjectId(user_id)},
+            {"rawText": 0}
+        )
+    )
+
+    for r in resumes:
+        r["_id"] = str(r["_id"])
+
+        # ✅ ENSURE uploadedAt IS STRING
+        if "uploadedAt" in r and r["uploadedAt"]:
+            r["uploadedAt"] = r["uploadedAt"].isoformat()
+
+    return resumes
+
+

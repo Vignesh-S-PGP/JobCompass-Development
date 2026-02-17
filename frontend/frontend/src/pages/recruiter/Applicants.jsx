@@ -12,42 +12,37 @@ function ResumeReviewModal({ app, onClose }) {
   useEffect(() => {
     if (!app) return
 
-    // ✅ SAFELY EXTRACT RESUME ID
-    let resumeId = null
-
-    if (typeof app.resumeId === "string") {
-      resumeId = app.resumeId
-    } else if (typeof app.resume === "string") {
-      resumeId = app.resume
-    } else if (app.resume?._id) {
-      resumeId =
-        typeof app.resume._id === "string"
-          ? app.resume._id
-          : app.resume._id.$oid
-    }
-
-    console.log("📄 RESUME ID =", resumeId)
+    const resumeId =
+      app.resume?._id?.$oid || app.resume?._id
 
     if (!resumeId) {
       setError("Resume ID missing")
       return
     }
 
-    setPdfUrl(null)
-    setError(null)
+    let objectUrl = null
 
-    api
-      .get(`/resumes/view-token/${resumeId}`)
+    api.get(`/resumes/view/${resumeId}`, {
+      responseType: "blob",
+      timeout: 20000   // ⏱️ 20 seconds max
+    })
       .then(res => {
-        const token = res.data.token
-        setPdfUrl(
-          `${import.meta.env.VITE_API_BASE_URL}/resumes/stream/${token}`
-        )
+        const blob = new Blob([res.data], {
+          type: "application/pdf"
+        })
+        objectUrl = URL.createObjectURL(blob)
+        setPdfUrl(objectUrl)
       })
       .catch(err => {
-        console.error("❌ Token fetch failed:", err)
+        console.error("❌ Resume load failed:", err)
         setError("Unable to load resume PDF")
       })
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+      setPdfUrl(null)
+      setError(null)
+    }
   }, [app])
 
   if (!app) return null
@@ -134,7 +129,6 @@ function ResumeReviewModal({ app, onClose }) {
   )
 }
 
-
 /* =========================
    👥 Applicants Page
 ========================= */
@@ -195,16 +189,16 @@ export default function Applicants() {
                   onClick={() => setSelectedApp(a)}
                   className="border px-3 py-1 rounded hover:bg-gray-100"
                 >
-                  View Resume
+                  Review
                 </button>
 
-                <button className="bg-green-600 text-white px-3 py-1 rounded">
+                {/* <button className="bg-green-600 text-white px-3 py-1 rounded">
                   Shortlist
                 </button>
 
                 <button className="bg-red-600 text-white px-3 py-1 rounded">
                   Reject
-                </button>
+                </button> */}
               </div>
             </div>
           )

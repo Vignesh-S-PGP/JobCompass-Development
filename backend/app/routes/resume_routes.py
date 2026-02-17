@@ -8,14 +8,10 @@ from flask_jwt_extended import (
 from app.services.resume_service import upload_resume, fetch_user_resumes
 from app.extensions.db import mongo
 from bson import ObjectId
-from datetime import datetime, timedelta
+from datetime import timedelta
 import os
 
-# =========================
-# 🔗 Blueprint
-# =========================
 resume_bp = Blueprint("resumes", __name__, url_prefix="/api/resumes")
-
 
 # =========================
 # 📤 Upload Resume
@@ -24,13 +20,16 @@ resume_bp = Blueprint("resumes", __name__, url_prefix="/api/resumes")
 @jwt_required()
 def upload():
     file = request.files.get("resume")
+    title = request.form.get("title")
 
-    success, error = upload_resume(file)
+    if not file:
+        return {"error": "No file received"}, 400
+
+    success, error = upload_resume(file, title)
     if error:
         return {"error": error}, 400
 
     return {"message": "Resume uploaded successfully"}, 201
-
 
 # =========================
 # 📃 List User Resumes
@@ -43,18 +42,17 @@ def list_resumes():
 
 
 # =========================
-# 🔐 Generate Short-Lived View Token
+# 🔐 Generate View Token
 # =========================
 @resume_bp.route("/view-token/<resume_id>", methods=["GET"])
 @jwt_required()
 def generate_view_token(resume_id):
     try:
-        resume = mongo.db.resumes.find_one(
-            {"_id": ObjectId(resume_id)}
-        )
+        resume_obj_id = ObjectId(resume_id)
     except Exception:
         return {"error": "Invalid resume id"}, 400
 
+    resume = mongo.db.resumes.find_one({"_id": resume_obj_id})
     if not resume:
         return {"error": "Resume not found"}, 404
 
@@ -67,19 +65,22 @@ def generate_view_token(resume_id):
 
 
 # =========================
-# 🔓 Public Resume Stream (NO JWT)
+# 🔓 Stream Resume (NO JWT)
 # =========================
 @resume_bp.route("/stream/<token>", methods=["GET"])
 def stream_resume(token):
     try:
         decoded = decode_token(token)
-        resume_id = decoded["sub"]
+        resume_id = decoded.get("sub")
     except Exception:
         return {"error": "Invalid or expired token"}, 401
 
-    resume = mongo.db.resumes.find_one(
-        {"_id": ObjectId(resume_id)}
-    )
+    try:
+        resume_obj_id = ObjectId(resume_id)
+    except Exception:
+        return {"error": "Invalid resume id"}, 400
+
+    resume = mongo.db.resumes.find_one({"_id": resume_obj_id})
     if not resume:
         return {"error": "Resume not found"}, 404
 
@@ -87,16 +88,14 @@ def stream_resume(token):
     if not file_path:
         return {"error": "File path missing"}, 404
 
-    # 🔥 NORMALIZE PATH (CRITICAL FIX)
+    # Normalize Windows paths
     file_path = file_path.replace("\\", "/")
 
     project_root = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../../")
     )
 
-    full_path = os.path.normpath(
-        os.path.join(project_root, file_path)
-    )
+    full_path = os.path.normpath(os.path.join(project_root, file_path))
 
     print("📄 STREAMING RESUME FROM:", full_path)
 
@@ -122,16 +121,14 @@ def delete_resume(resume_id):
     user_id = get_jwt_identity()
 
     try:
-        resume = mongo.db.resumes.find_one(
-            {"_id": ObjectId(resume_id)}
-        )
+        resume_obj_id = ObjectId(resume_id)
     except Exception:
         return {"error": "Invalid resume id"}, 400
 
+    resume = mongo.db.resumes.find_one({"_id": resume_obj_id})
     if not resume:
         return {"error": "Resume not found"}, 404
 
-    # 🔐 Owner check
     if str(resume.get("userId")) != user_id:
         return {"error": "Unauthorized"}, 403
 
@@ -143,15 +140,47 @@ def delete_resume(resume_id):
             os.path.join(os.path.dirname(__file__), "../../")
         )
 
-        full_path = os.path.normpath(
-            os.path.join(project_root, file_path)
-        )
-
+        full_path = os.path.normpath(os.path.join(project_root, file_path))
         if os.path.exists(full_path):
             os.remove(full_path)
 
-    mongo.db.resumes.delete_one(
-        {"_id": ObjectId(resume_id)}
-    )
+    mongo.db.resumes.delete_one({"_id": resume_obj_id})
 
     return {"message": "Resume deleted successfully"}, 200
+
+@resume_bp.route("/view/<resume_id>", methods=["GET"])
+@jwt_required()
+def view_resume(resume_id):
+    resume = mongo.db.resumes.find_one({
+        "_id": ObjectId(resume_id)
+    })
+
+    if not resume:
+        return {"error": "Resume not found"}, 404
+
+    file_path = resume.get("filePath")
+    if not file_path:
+        return {"error": "File path missing"}, 404
+
+    # 🔥 FIX: backend root, NOT app root
+    project_root = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../")
+    )
+
+    full_path = os.path.normpath(
+        os.path.join(project_root, file_path)
+    )
+
+    print("📄 RESUME PATH =", full_path)  # debug log
+
+    if not os.path.exists(full_path):
+        return {
+            "error": "Resume file missing on server",
+            "path": full_path
+        }, 404
+
+    return send_file(
+        full_path,
+        mimetype="application/pdf",
+        as_attachment=False
+    )
