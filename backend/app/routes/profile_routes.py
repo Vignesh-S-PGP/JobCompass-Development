@@ -39,7 +39,7 @@ def save_profile():
                 "experience": data.get("experience"),
                 "skills": data.get("skills"),
                 "bio": data.get("bio"),
-                "profileImage": data.get("profileImage"),  # 🔥 NEW
+                "profileImage": data.get("profileImage"), 
                 "updatedAt": datetime.utcnow()
             },
             "$setOnInsert": {

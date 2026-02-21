@@ -4,7 +4,6 @@ export default function JobCard({ job, onClick }) {
       onClick={onClick}
       className="bg-white p-5 rounded-xl shadow hover:shadow-lg cursor-pointer flex gap-4 transition"
     >
-      {/* Company Logo */}
       <img
         src={
           job.company?.logo ||
@@ -14,7 +13,6 @@ export default function JobCard({ job, onClick }) {
         className="w-14 h-14 rounded-lg object-contain bg-gray-100 p-2"
       />
 
-      {/* Job Info */}
       <div className="flex-1">
         <h2 className="text-lg font-semibold">{job.title}</h2>
 

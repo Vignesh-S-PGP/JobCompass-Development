@@ -13,9 +13,6 @@ import os
 
 resume_bp = Blueprint("resumes", __name__, url_prefix="/api/resumes")
 
-# =========================
-# 📤 Upload Resume
-# =========================
 @resume_bp.route("/upload", methods=["POST"])
 @jwt_required()
 def upload():
@@ -31,9 +28,6 @@ def upload():
 
     return {"message": "Resume uploaded successfully"}, 201
 
-# =========================
-# 📃 List User Resumes
-# =========================
 @resume_bp.route("", methods=["GET"])
 @jwt_required()
 def list_resumes():
@@ -41,9 +35,6 @@ def list_resumes():
     return {"resumes": resumes}, 200
 
 
-# =========================
-# 🔐 Generate View Token
-# =========================
 @resume_bp.route("/view-token/<resume_id>", methods=["GET"])
 @jwt_required()
 def generate_view_token(resume_id):
@@ -63,10 +54,6 @@ def generate_view_token(resume_id):
 
     return {"token": token}, 200
 
-
-# =========================
-# 🔓 Stream Resume (NO JWT)
-# =========================
 @resume_bp.route("/stream/<token>", methods=["GET"])
 def stream_resume(token):
     try:
@@ -88,7 +75,6 @@ def stream_resume(token):
     if not file_path:
         return {"error": "File path missing"}, 404
 
-    # Normalize Windows paths
     file_path = file_path.replace("\\", "/")
 
     project_root = os.path.abspath(
@@ -111,10 +97,6 @@ def stream_resume(token):
         as_attachment=False
     )
 
-
-# =========================
-# 🗑 Delete Resume
-# =========================
 @resume_bp.route("/<resume_id>", methods=["DELETE"])
 @jwt_required()
 def delete_resume(resume_id):
@@ -162,7 +144,6 @@ def view_resume(resume_id):
     if not file_path:
         return {"error": "File path missing"}, 404
 
-    # 🔥 FIX: backend root, NOT app root
     project_root = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../../")
     )
@@ -171,7 +152,7 @@ def view_resume(resume_id):
         os.path.join(project_root, file_path)
     )
 
-    print("📄 RESUME PATH =", full_path)  # debug log
+    print("📄 RESUME PATH =", full_path)  
 
     if not os.path.exists(full_path):
         return {

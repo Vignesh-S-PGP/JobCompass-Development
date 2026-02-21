@@ -5,7 +5,7 @@ from flask_jwt_extended import get_jwt_identity
 from app.models.resume_model import create_resume, get_resumes_by_user
 from app.utils.pdf_extractor import extract_text_from_pdf
 from datetime import datetime
-from app.extensions.db import mongo   # 🔥 ADD THIS LINE
+from app.extensions.db import mongo   
 
 UPLOAD_FOLDER = "uploads/resumes"
 
@@ -29,7 +29,7 @@ def upload_resume(file, title=None):
     resume_doc = {
         "userId": ObjectId(user_id),
         "filename": filename,
-        "title": title,                 # ✅ NOW STORED
+        "title": title,              
         "filePath": file_path,
         "rawText": raw_text,
         "analysis": {},
@@ -52,7 +52,6 @@ def fetch_user_resumes():
     for r in resumes:
         r["_id"] = str(r["_id"])
 
-        # ✅ ENSURE uploadedAt IS STRING
         if "uploadedAt" in r and r["uploadedAt"]:
             r["uploadedAt"] = r["uploadedAt"].isoformat()
 

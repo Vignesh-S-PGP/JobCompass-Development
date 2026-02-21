@@ -32,10 +32,9 @@ def job_feed():
             "location": job.get("location"),
             "jobType": job.get("jobType"),
             "salaryRange": job.get("salaryRange"),
-            "company": company   # 🔥 THIS IS THE KEY
+            "company": company  
         })
 
-    # No profile → no recommendations
     if not profile:
         return {
             "recommended": [],

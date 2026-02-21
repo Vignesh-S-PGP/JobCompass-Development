@@ -41,8 +41,6 @@ export default function JobDetails({ job, onBack }) {
       </button>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-        {/* 🏢 COMPANY CARD */}
         <aside className="md:col-span-1">
           <div className="bg-white rounded-xl shadow p-6 sticky top-6">
 
@@ -85,7 +83,6 @@ export default function JobDetails({ job, onBack }) {
           </div>
         </aside>
 
-        {/* 💼 JOB DETAILS */}
         <main className="md:col-span-2">
           <div className="bg-white rounded-xl shadow p-8">
 
@@ -118,7 +115,6 @@ export default function JobDetails({ job, onBack }) {
               </div>
             )}
 
-            {/* 🎯 APPLY SECTION */}
             <div className="mt-8 border-t pt-6">
               <h3 className="font-semibold mb-2">
                 Apply with AI ATS
@@ -148,7 +144,6 @@ export default function JobDetails({ job, onBack }) {
         </main>
       </div>
 
-      {/* 🧠 ATS MODAL */}
       <ATSModal
         loading={atsLoading}
         data={atsResult}

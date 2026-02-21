@@ -12,8 +12,8 @@ def upsert_profile(user_id, data):
                 "fullName": data.get("fullName"),
                 "headline": data.get("headline"),
                 "location": data.get("location"),
-                "experience": data.get("experience"),  # years
-                "skills": data.get("skills", []),       # ARRAY
+                "experience": data.get("experience"),  
+                "skills": data.get("skills", []),      
                 "bio": data.get("bio"),
                 "updatedAt": datetime.utcnow()
             },

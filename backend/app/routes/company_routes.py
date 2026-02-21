@@ -6,8 +6,6 @@ from datetime import datetime
 
 company_bp = Blueprint("company", __name__, url_prefix="/api/company")
 
-
-# Get my company
 @company_bp.route("/my", methods=["GET"])
 @jwt_required()
 def get_my_company():
@@ -20,8 +18,6 @@ def get_my_company():
 
     return {"company": company}, 200
 
-
-# Create / Update company
 @company_bp.route("", methods=["POST"])
 @jwt_required()
 def create_company():

@@ -22,10 +22,8 @@ export default function Login() {
       password,
     })
 
-    // Save token
     localStorage.setItem("token", res.data.accessToken)
 
-    // Decode user from token
 const user = getUserFromToken()
 
 if (user.role === "job_seeker") {
@@ -35,14 +33,12 @@ if (user.role === "job_seeker") {
 }
 
 
-
   } catch (err) {
     setError(err.response?.data?.error || "Login failed")
   } finally {
     setLoading(false)
   }
 }
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100">

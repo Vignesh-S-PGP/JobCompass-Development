@@ -51,7 +51,7 @@ Return ONLY valid JSON in this format:
         data = res.json()
 
         raw = data.get("response", "")
-        print("\n🧠 RAW AI RESPONSE:\n", raw)
+        print("\nRAW AI RESPONSE:\n", raw)
 
         match = re.search(r"\{.*\}", raw, re.S)
         if not match:
@@ -63,7 +63,7 @@ Return ONLY valid JSON in this format:
         return ats
 
     except Exception as e:
-        print("❌ ATS AI ERROR:", e)
+        print("TS AI ERROR:", e)
         return {
             "score": 0,
             "reason": "AI scoring failed"

@@ -39,13 +39,11 @@ export default function ResumePreviewModal({ resumeId, onClose }) {
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
       <div className="w-[95vw] max-w-6xl h-[90vh] bg-white rounded-xl overflow-hidden flex flex-col">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="font-semibold">Resume Preview</h3>
           <button onClick={onClose} className="text-gray-600">✕</button>
         </div>
 
-        {/* BODY */}
         <div className="flex-1 bg-gray-100">
           {error ? (
             <div className="h-full flex items-center justify-center text-red-600">

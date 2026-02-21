@@ -63,7 +63,6 @@ export default function Profile() {
   return (
     <div className="max-w-5xl mx-auto p-6">
 
-      {/* Header Card */}
       <div className="bg-white rounded-xl shadow p-6 flex gap-6 items-center">
         <div className="relative">
           <img
@@ -108,7 +107,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* About */}
       <div className="bg-white rounded-xl shadow p-6 mt-6">
         <h3 className="font-semibold text-lg mb-2">About Me</h3>
         <textarea
@@ -119,7 +117,6 @@ export default function Profile() {
         />
       </div>
 
-      {/* Skills */}
       <div className="bg-white rounded-xl shadow p-6 mt-6">
         <h3 className="font-semibold text-lg mb-3">Skills</h3>
 
@@ -156,7 +153,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Save */}
       <div className="mt-6 text-right">
         <button
           onClick={handleSubmit}

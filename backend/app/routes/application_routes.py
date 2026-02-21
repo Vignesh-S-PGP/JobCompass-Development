@@ -24,7 +24,6 @@ def apply_job():
     if not job or not resume:
         return {"error": "Invalid job or resume"}, 400
 
-    # 🔥 AI CALL
     ats = calculate_ats_score(
         job_desc=job.get("description", ""),
         resume_text=resume.get("rawText", "")
@@ -54,8 +53,6 @@ def apply_job():
 }, 201
 
 
-
-# 2️⃣ GET APPLICANTS (SORTED BY ATS SCORE)
 @application_bp.route("/job/<job_id>", methods=["GET"])
 @jwt_required()
 def get_applicants(job_id):
@@ -66,7 +63,7 @@ def get_applicants(job_id):
 
     apps = mongo.db.applications.find(
         {"jobId": job_oid}
-    ).sort("atsScore", -1)   # 🔥 SORT DESCENDING
+    ).sort("atsScore", -1)   
 
     result = []
     for a in apps:
@@ -87,8 +84,6 @@ def get_applicants(job_id):
 
     return {"applications": result}, 200
 
-
-# 3️⃣ UPDATE STATUS
 @application_bp.route("/<app_id>/status", methods=["PUT"])
 @jwt_required()
 def update_status(app_id):
@@ -97,3 +92,166 @@ def update_status(app_id):
         {"$set": {"status": request.json.get("status")}}
     )
     return {"message": "Status updated"}, 200
+
+@application_bp.route("/my", methods=["GET"])
+@jwt_required()
+def my_applications():
+    user_id = get_jwt_identity()
+
+    try:
+        user_obj_id = ObjectId(user_id)
+    except Exception:
+        return {"applications": []}, 200
+
+    applications = list(
+        mongo.db.applications.find({"userId": user_obj_id})
+    )
+
+    result = []
+
+    for app in applications:
+    
+        job = mongo.db.jobs.find_one(
+            {"_id": ObjectId(app["jobId"])}
+        )
+
+        company = None
+        if job and job.get("companyId"):
+            company = mongo.db.companies.find_one(
+                {"_id": ObjectId(job["companyId"])}
+            )
+
+        result.append({
+            "applicationId": str(app["_id"]),
+            "status": app.get("status", "applied"),
+            "atsScore": app.get("atsScore"),
+            "ats": app.get("ats"),
+            "appliedAt": app.get("createdAt").isoformat() if app.get("createdAt") else None,
+
+        
+            "resumeId": str(app.get("resumeId")) if app.get("resumeId") else None,
+
+        
+            "job": {
+                "id": str(job["_id"]) if job else None,
+                "title": job.get("title") if job else None,
+                "location": job.get("location") if job else None,
+                "experience": job.get("experience") if job else None,
+            } if job else None,
+
+           
+            "company": {
+            "_id": str(company["_id"]),
+            "name": company.get("name"),
+            "logo": company.get("logo"),
+            "location": company.get("location"),
+            "industry": company.get("industry"),
+            } if company else None,
+        })
+
+    return {"applications": result}, 200
+
+from bson import ObjectId
+
+@application_bp.route("/<application_id>", methods=["GET"])
+@jwt_required()
+def get_application_detail(application_id):
+    user_id = get_jwt_identity()
+
+    try:
+        application_obj_id = ObjectId(application_id)
+        user_obj_id = ObjectId(user_id)
+    except Exception:
+        return {"error": "Invalid id"}, 400
+
+    application = mongo.db.applications.find_one({
+        "_id": application_obj_id,
+        "userId": user_obj_id
+    })
+
+    if not application:
+        return {"error": "Application not found"}, 404
+
+    job = mongo.db.jobs.find_one(
+    {"_id": ObjectId(application["jobId"])},
+    {
+        "title": 1,
+        "description": 1,
+        "location": 1,
+        "jobType": 1,
+        "companyId": 1   # 🔥 REQUIRED
+    }
+)
+
+    company = None
+    if job and job.get("companyId"):
+        company = mongo.db.companies.find_one(
+            {"_id": ObjectId(job["companyId"])},
+            {"name": 1, "logo": 1, "location": 1}
+        )
+
+    resume = None
+    if application.get("resumeId"):
+        resume = mongo.db.resumes.find_one(
+    {"_id": ObjectId(application["resumeId"])},
+    {
+        "filename": 1,
+        "title": 1      # 🔥 THIS WAS MISSING
+    }
+)
+
+    return {
+        "application": {
+            "id": str(application["_id"]),
+            "status": application.get("status"),
+            "atsScore": application.get("atsScore"),
+            "ats": application.get("ats", {}),
+            "appliedAt": application.get("createdAt"),
+
+            "job": {
+                "_id": str(job["_id"]),
+                "title": job.get("title"),
+                "description": job.get("description"),
+                "location": job.get("location"),
+                "jobType": job.get("jobType")
+            } if job else None,
+
+            "company": {
+            "_id": str(company["_id"]),
+            "name": company.get("name"),
+            "logo": company.get("logo"),
+            "location": company.get("location"),
+            "industry": company.get("industry"),
+            } if company else None,
+
+            "resume": {
+            "_id": str(resume["_id"]),
+            "title": resume.get("title"),
+            "filename": resume.get("filename")
+            } if resume else None
+        }
+    }, 200
+
+
+
+@application_bp.route("/<application_id>/status", methods=["PATCH"])
+@jwt_required()
+def update_application_status(application_id):
+    data = request.json
+    status = data.get("status")
+
+    if status not in ["shortlisted", "rejected"]:
+        return {"error": "Invalid status"}, 400
+
+    mongo.db.applications.update_one(
+        {"_id": ObjectId(application_id)},
+        {
+            "$set": {
+                "status": status,
+                "updatedAt": datetime.utcnow()
+            }
+        }
+    )
+
+    return {"message": "Status updated"}, 200
+

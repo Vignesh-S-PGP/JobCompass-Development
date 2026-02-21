@@ -26,7 +26,6 @@ export default function RecruiterLayout() {
   return (
     <div className="min-h-screen flex bg-gray-100">
 
-      {/* Sidebar */}
       <aside className="w-64 bg-black text-white flex flex-col">
         <div className="p-6 text-xl font-bold border-b border-gray-700">
           JobCompass Recruiter
@@ -67,9 +66,8 @@ export default function RecruiterLayout() {
         </div>
       </aside>
 
-      {/* Main content (IMPORTANT) */}
       <main className="flex-1 p-6">
-        <Outlet /> {/* ✅ REQUIRED FOR useParams() TO WORK */}
+        <Outlet /> 
       </main>
 
     </div>

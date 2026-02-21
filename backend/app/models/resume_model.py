@@ -19,7 +19,6 @@ def get_resumes_by_user(user_id):
         r["_id"] = str(r["_id"])
         r["userId"] = str(r["userId"])
 
-        # 🔥 Convert datetime → ISO string
         if "uploadedAt" in r and r["uploadedAt"]:
             r["uploadedAt"] = r["uploadedAt"].isoformat()
 

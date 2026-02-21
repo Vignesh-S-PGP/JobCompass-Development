@@ -12,7 +12,6 @@ def create_job():
     user_id = get_jwt_identity()
     data = request.json
 
-    # 🔥 find company owned by recruiter
     company = mongo.db.companies.find_one(
         {"ownerId": ObjectId(user_id)}
     )
@@ -53,7 +52,6 @@ def recommended_jobs():
     if not profile:
         return {"jobs": []}
 
-    # 🔥 Normalize profile skills
     profile_skills = []
     for s in profile.get("skills", []):
         profile_skills.extend([x.strip().lower() for x in s.split(",")])
