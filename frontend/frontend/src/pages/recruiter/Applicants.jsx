@@ -5,7 +5,7 @@ import api from "../../services/api"
 /* =========================
    📄 Resume + ATS Modal
 ========================= */
-function ResumeReviewModal({ app, onClose }) {
+function ResumeReviewModal({ app, onClose, onUpdateStatus }) {
   const [pdfUrl, setPdfUrl] = useState(null)
   const [error, setError] = useState(null)
 
@@ -13,7 +13,9 @@ function ResumeReviewModal({ app, onClose }) {
     if (!app) return
 
     const resumeId =
-      app.resume?._id?.$oid || app.resume?._id
+      app.resume?._id?.$oid ||
+      app.resume?._id ||
+      app.resumeId
 
     if (!resumeId) {
       setError("Resume ID missing")
@@ -21,10 +23,13 @@ function ResumeReviewModal({ app, onClose }) {
     }
 
     let objectUrl = null
+    setError(null)
+    setPdfUrl(null)
 
+    // ✅ KEEP OLD WORKING LOGIC (JWT via Axios)
     api.get(`/resumes/view/${resumeId}`, {
       responseType: "blob",
-      timeout: 20000   // ⏱️ 20 seconds max
+      timeout: 20000
     })
       .then(res => {
         const blob = new Blob([res.data], {
@@ -40,16 +45,12 @@ function ResumeReviewModal({ app, onClose }) {
 
     return () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl)
-      setPdfUrl(null)
-      setError(null)
     }
   }, [app])
 
   if (!app) return null
 
   const ats = app.ats || {}
-  const matched = ats.matched_skills || []
-  const missing = ats.missing_skills || []
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex">
@@ -85,35 +86,47 @@ function ResumeReviewModal({ app, onClose }) {
 
         <section className="mb-4">
           <h3 className="font-semibold mb-1">Matched Skills</h3>
-          {matched.length === 0 ? (
-            <p className="text-sm text-gray-500">None</p>
-          ) : (
-            <ul className="list-disc list-inside text-green-700 text-sm">
-              {matched.map((s, i) => <li key={i}>{s}</li>)}
-            </ul>
-          )}
+          <ul className="list-disc list-inside text-green-700 text-sm">
+            {(ats.matched_skills || []).map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
         </section>
 
         <section className="mb-4">
           <h3 className="font-semibold mb-1">Missing Skills</h3>
-          {missing.length === 0 ? (
-            <p className="text-sm text-gray-500">No major gaps</p>
-          ) : (
-            <ul className="list-disc list-inside text-red-600 text-sm">
-              {missing.map((s, i) => <li key={i}>{s}</li>)}
-            </ul>
-          )}
+          <ul className="list-disc list-inside text-red-600 text-sm">
+            {(ats.missing_skills || []).map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
         </section>
 
         <p className="text-sm text-gray-600 mb-6">
           {ats.reason}
         </p>
 
+        {/* ✅ SHORTLIST / REJECT */}
         <div className="flex gap-2">
-          <button className="flex-1 bg-green-600 text-white py-2 rounded">
+          <button
+            disabled={app.status === "shortlisted"}
+            onClick={() => onUpdateStatus(app.applicationId, "shortlisted")}
+            className={`flex-1 py-2 rounded text-white
+              ${app.status === "shortlisted"
+                ? "bg-green-300 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"}`}
+          >
             Shortlist
           </button>
-          <button className="flex-1 bg-red-600 text-white py-2 rounded">
+
+          <button
+            disabled={app.status === "rejected"}
+            onClick={() => onUpdateStatus(app.applicationId, "rejected")}
+            className={`flex-1 py-2 rounded text-white
+              ${app.status === "rejected"
+                ? "bg-red-300 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700"}`}
+          >
             Reject
           </button>
         </div>
@@ -145,69 +158,67 @@ export default function Applicants() {
       .catch(err => console.error(err))
   }, [jobId])
 
+  // ✅ SINGLE SOURCE OF TRUTH
+  const updateStatus = async (applicationId, status) => {
+    try {
+      await api.patch(`/applications/${applicationId}/status`, { status })
+
+      setApps(prev =>
+        prev.map(a =>
+          a.applicationId === applicationId
+            ? { ...a, status }
+            : a
+        )
+      )
+
+      setSelectedApp(prev =>
+        prev && prev.applicationId === applicationId
+          ? { ...prev, status }
+          : prev
+      )
+    } catch (err) {
+      console.error("❌ Status update failed", err)
+      alert("Failed to update status")
+    }
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">
         Applicants
       </h1>
 
-      {apps.length === 0 && (
-        <p className="text-gray-500">No applicants yet</p>
-      )}
+      {apps.map((a, index) => (
+        <div
+          key={a.applicationId}
+          className="bg-white rounded-lg shadow p-4 flex justify-between items-center mb-3"
+        >
+          <div>
+            <p className="font-semibold">
+              {a.user?.fullName || "Candidate"}
+            </p>
+            <p className="text-sm text-gray-500">
+              AI Score
+            </p>
+          </div>
 
-      <div className="space-y-4">
-        {apps.map((a, index) => {
-          const name =
-            a.user?.fullName ||
-            a.user?.email?.split("@")[0] ||
-            "Candidate"
+          <div className="text-2xl font-bold text-green-700">
+            {a.atsScore}%
+          </div>
 
-          return (
-            <div
-              key={a.applicationId}
-              className="bg-white rounded-lg shadow p-4 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4">
-                <div className="text-lg font-bold text-gray-500">
-                  #{index + 1}
-                </div>
-
-                <div>
-                  <p className="font-semibold">{name}</p>
-                  <p className="text-sm text-gray-500">
-                    AI Score
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-2xl font-bold text-green-700">
-                {a.atsScore}%
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setSelectedApp(a)}
-                  className="border px-3 py-1 rounded hover:bg-gray-100"
-                >
-                  Review
-                </button>
-
-                {/* <button className="bg-green-600 text-white px-3 py-1 rounded">
-                  Shortlist
-                </button>
-
-                <button className="bg-red-600 text-white px-3 py-1 rounded">
-                  Reject
-                </button> */}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+          <button
+            onClick={() => setSelectedApp(a)}
+            className="border px-3 py-1 rounded hover:bg-gray-100"
+          >
+            Review
+          </button>
+        </div>
+      ))}
 
       <ResumeReviewModal
         app={selectedApp}
         onClose={() => setSelectedApp(null)}
+        onUpdateStatus={updateStatus}
       />
     </div>
   )

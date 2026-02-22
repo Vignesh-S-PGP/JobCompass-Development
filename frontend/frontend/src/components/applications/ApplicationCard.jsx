@@ -36,11 +36,17 @@ export default function ApplicationCard({ app }) {
 
       {/* RIGHT */}
       <div className="flex items-center gap-4">
-        <span
-          className={`px-3 py-1 rounded-full text-sm ${statusColor[app.status]}`}
-        >
-          {app.status}
-        </span>
+       <span
+  className={`px-3 py-1 rounded-full text-xs font-semibold
+    ${a.status === "shortlisted"
+      ? "bg-green-100 text-green-700"
+      : a.status === "rejected"
+      ? "bg-red-100 text-red-700"
+      : "bg-yellow-100 text-yellow-700"}
+  `}
+>
+  {a.status.toUpperCase()}
+</span>
 
         <button
           onClick={() => navigate(`/applications/${app._id}`)}
