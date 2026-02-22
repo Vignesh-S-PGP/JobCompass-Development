@@ -8,7 +8,8 @@ import {
   ChevronRight,
   ClipboardList,
   Settings,
-  LogOut
+  LogOut,
+  MessageSquare
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 import NotificationBell from "../notifications/NotificationBell";
@@ -38,6 +39,7 @@ export default function JobSeekerLayout() {
     { name: "Jobs", path: "/jobseeker/jobs", icon: <Briefcase size={20} /> },
     { name: "Applied Jobs", path: "/jobseeker/applications", icon: <ClipboardList size={20} /> },
     { name: "Resumes", path: "/jobseeker/resumes", icon: <FileText size={20} /> },
+    {name: "Messages",path: "/jobseeker/chat",icon: <MessageSquare size={20} />}
   ];
 
   return (

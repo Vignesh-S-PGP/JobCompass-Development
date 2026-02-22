@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import api from "../../services/api"
 
 /* =========================
@@ -142,11 +142,10 @@ function ResumeReviewModal({ app, onClose, onUpdateStatus }) {
   )
 }
 
-/* =========================
-   👥 Applicants Page
-========================= */
+
 export default function Applicants() {
   const { jobId } = useParams()
+  const navigate = useNavigate()   // ✅ ADD THIS
   const [apps, setApps] = useState([])
   const [selectedApp, setSelectedApp] = useState(null)
 
@@ -158,7 +157,6 @@ export default function Applicants() {
       .catch(err => console.error(err))
   }, [jobId])
 
-  // ✅ SINGLE SOURCE OF TRUTH
   const updateStatus = async (applicationId, status) => {
     try {
       await api.patch(`/applications/${applicationId}/status`, { status })
@@ -170,6 +168,12 @@ export default function Applicants() {
             : a
         )
       )
+      const startChat = async (applicationId) => {
+  const res = await api.post("/chat/start", {
+    applicationId
+  })
+  navigate(`/recruiter/chat/${res.data.conversationId}`)
+}
 
       setSelectedApp(prev =>
         prev && prev.applicationId === applicationId
@@ -184,28 +188,41 @@ export default function Applicants() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">
-        Applicants
-      </h1>
+      <h1 className="text-2xl font-bold mb-6">Applicants</h1>
 
-      {apps.map((a, index) => (
+      {apps.map(a => (
         <div
           key={a.applicationId}
-          className="bg-white rounded-lg shadow p-4 flex justify-between items-center mb-3"
+          className="bg-white rounded-lg shadow p-4 flex items-center gap-4 mb-3"
         >
-          <div>
+          <div className="flex-1">
             <p className="font-semibold">
               {a.user?.fullName || "Candidate"}
             </p>
             <p className="text-sm text-gray-500">
-              AI Score
+              ATS Score: {a.atsScore}%
             </p>
           </div>
 
-          <div className="text-2xl font-bold text-green-700">
-            {a.atsScore}%
-          </div>
+          {/* 💬 MESSAGE */}
+          <button
+  onClick={() => startChat(a.applicationId)}
+  className="p-2 rounded hover:bg-indigo-100"
+>
+  💬
+</button>
 
+          {/* 👤 VIEW PROFILE */}
+          <button
+            onClick={() =>
+              navigate(`/recruiter/applicants/${a.applicationId}/profile`)
+            }
+            className="px-3 py-1 text-xs font-bold border rounded hover:bg-slate-100"
+          >
+            View Profile
+          </button>
+
+          {/* 🔍 REVIEW */}
           <button
             onClick={() => setSelectedApp(a)}
             className="border px-3 py-1 rounded hover:bg-gray-100"

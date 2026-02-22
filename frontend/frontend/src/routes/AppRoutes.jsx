@@ -18,6 +18,8 @@ import Company from "../pages/recruiter/Company"
 import Applicants from "../pages/recruiter/Applicants"
 import AppliedJobs from "../pages/jobseeker/AppliedJobs"
 import ApplicationDetail from "../pages/jobseeker/ApplicationDetail"
+import ChatPage from "../pages/chat/ChatPage"
+import ApplicantProfile from "../pages/recruiter/ApplicantProfile"; 
 // import JobseekerLayout from "../layouts/JobseekerLayout"
 
 
@@ -43,7 +45,9 @@ export default function AppRoutes() {
     {/* ✅ Applied Jobs */}
     <Route path="applications" element={<AppliedJobs />} />
     <Route path="applications/:id" element={<ApplicationDetail />} />
-
+    <Route path="chat/:applicationId" element={<ChatPage />} />
+    <Route path="chat" element={<ChatPage />} />
+<Route path="chat/:conversationId" element={<ChatPage />} />
   </Route>
 </Route>
 
@@ -59,8 +63,20 @@ export default function AppRoutes() {
           {/* ✅ FIXED JOBS FLOW */}
           <Route path="jobs" element={<RecruiterJobs />} />
           <Route path="jobs/:jobId/applicants" element={<Applicants />} />
+          <Route path="chat/:conversationId" element={<ChatPage />} />
+           {/* Applicant Profile */}
+    <Route
+      path="applicants/:applicationId/profile"
+      element={<ApplicantProfile />}
+    />
 
+    {/* Chat */}
+    <Route
+      path="chat/:applicationId"
+      element={<ChatPage />}
+    />
         </Route>
+        
       </Route>
 
       {/* Fallback */}

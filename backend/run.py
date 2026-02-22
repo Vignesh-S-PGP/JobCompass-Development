@@ -1,7 +1,12 @@
 from app.main import create_app
+from app.extensions.socket import socketio
 
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=False, use_reloader=False)
-
+    socketio.run(
+        app,
+        host="127.0.0.1",
+        port=5000,
+        debug=False
+    )
