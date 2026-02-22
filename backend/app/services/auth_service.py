@@ -16,7 +16,7 @@ def register_user(data):
     if not email or not password or not role:
         return None, "Missing required fields"
 
-    if role not in ["job_seeker", "recruiter"]:
+    if role not in ["job_seeker", "recruiter", "admin"]:
         return None, "Invalid role"
 
     if mongo.db.users.find_one({"email": email}):
@@ -36,17 +36,6 @@ def register_user(data):
     create_user(user)
     return user, None
 
-def login_user(email, password):
-    user = find_by_email(email)
-    if not user or not verify_password(password, user["passwordHash"]):
-        return None
-
-    token = create_access_token(
-        identity=str(user["_id"]),
-        additional_claims={"role": user["role"]},
-        expires_delta=timedelta(days=1)
-    )
-    return token
 
 
 def login_user(email, password):

@@ -1,10 +1,10 @@
 import { io } from "socket.io-client";
 
-const socket = io("http://127.0.0.1:5000", {
-  auth: {
-    token: localStorage.getItem("token"),
-  },
-  autoConnect: true,
-});
+const SOCKET_URL = "http://127.0.0.1:5000";
 
-export default socket;
+export const socket = io(SOCKET_URL, {
+  autoConnect: false,
+  auth: (cb) => {
+    cb({ token: localStorage.getItem("token") });
+  }
+});

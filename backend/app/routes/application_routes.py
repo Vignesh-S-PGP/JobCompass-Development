@@ -21,13 +21,16 @@ def apply_job():
 
     job = mongo.db.jobs.find_one({"_id": ObjectId(data["jobId"])})
     resume = mongo.db.resumes.find_one({"_id": ObjectId(data["resumeId"])})
+    profile = mongo.db.jobseeker_profiles.find_one({"userId": ObjectId(user_id)})
 
     if not job or not resume:
         return {"error": "Invalid job or resume"}, 400
 
     ats = calculate_ats_score(
         job_desc=job.get("description", ""),
-        resume_text=resume.get("rawText", "")
+        resume_text=resume.get("rawText", ""),
+        job_skills=job.get("skillsRequired", []),
+        profile_data=profile
     )
 
     app = {
@@ -36,6 +39,8 @@ def apply_job():
         "resumeId": ObjectId(data["resumeId"]),
         "status": "applied",
         "atsScore": ats["score"],
+        "matchedCount": len(ats.get("matched_skills", [])),
+        "missingCount": len(ats.get("missing_skills", [])),
         "ats": ats,
         "createdAt": datetime.utcnow()
     }
@@ -64,7 +69,12 @@ def get_applicants(job_id):
 
     apps = mongo.db.applications.find(
         {"jobId": job_oid}
-    ).sort("atsScore", -1)   
+    ).sort([
+        ("atsScore", -1),
+        ("matchedCount", -1),
+        ("missingCount", 1),
+        ("createdAt", 1)
+    ])
 
     result = []
     for a in apps:

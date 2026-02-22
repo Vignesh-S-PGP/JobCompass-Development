@@ -30,6 +30,8 @@ if (user.role === "job_seeker") {
   navigate("/jobseeker/dashboard")
 } else if (user.role === "recruiter") {
   navigate("/recruiter/dashboard")
+} else if (user.role === "admin") {
+  navigate("/admin/dashboard")
 }
 
 

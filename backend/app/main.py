@@ -40,6 +40,8 @@ def create_app():
     from app.routes.application_routes import application_bp
     from app.routes.notification_routes import notification_bp
     from app.routes.applicant_profile_routes import applicant_profile_bp
+    from app.routes.admin_routes import admin_bp
+    from app.routes.chat_routes import chat_bp
     app.register_blueprint(applicant_profile_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(resume_bp)
@@ -50,6 +52,8 @@ def create_app():
     app.register_blueprint(job_feed_bp)
     app.register_blueprint(application_bp)
     app.register_blueprint(notification_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(chat_bp)
 
     @app.route("/health")
     def health():

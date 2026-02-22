@@ -37,6 +37,8 @@ def save_profile():
                 "headline": data.get("headline"),
                 "location": data.get("location"),
                 "experience": data.get("experience"),
+                "detailedExperience": data.get("detailedExperience", []),
+                "education": data.get("education", []),
                 "skills": data.get("skills"),
                 "bio": data.get("bio"),
                 "profileImage": data.get("profileImage"), 
