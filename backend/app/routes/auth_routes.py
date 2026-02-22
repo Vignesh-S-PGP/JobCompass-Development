@@ -5,6 +5,8 @@ from app.utils.decorators import role_required
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
+from flask_jwt_extended import create_access_token
+
 @auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.json
@@ -13,7 +15,12 @@ def register():
     if error:
         return {"error": error}, 400
 
-    return {"message": "User registered successfully"}
+    token = create_access_token(identity=str(user["_id"]))
+
+    return {
+        "accessToken": token,
+        "role": user["role"]
+    }, 201
 
 @auth_bp.route("/login", methods=["POST"])
 def login():

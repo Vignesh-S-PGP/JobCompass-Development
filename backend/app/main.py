@@ -34,6 +34,8 @@ def create_app():
     from app.routes.company_routes import company_bp
     from app.routes.job_feed_routes import job_feed_bp
     from app.routes.application_routes import application_bp
+    from app.routes.notification_routes import notification_bp
+    app.register_blueprint(notification_bp)
     app.register_blueprint(application_bp)
     app.register_blueprint(profile_bp)
     app.register_blueprint(auth_bp)

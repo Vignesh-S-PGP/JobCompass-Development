@@ -5,6 +5,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from datetime import datetime
 from app.services.ats_ai import calculate_ats_score
+from app.services.notification_service import create_notification
 
 
 application_bp = Blueprint("applications", __name__, url_prefix="/api/applications")
@@ -232,8 +233,6 @@ def get_application_detail(application_id):
         }
     }, 200
 
-
-
 @application_bp.route("/<application_id>/status", methods=["PATCH"])
 @jwt_required()
 def update_application_status(application_id):
@@ -243,6 +242,15 @@ def update_application_status(application_id):
     if status not in ["shortlisted", "rejected"]:
         return {"error": "Invalid status"}, 400
 
+    # 🔹 Fetch application FIRST
+    application = mongo.db.applications.find_one({
+        "_id": ObjectId(application_id)
+    })
+
+    if not application:
+        return {"error": "Application not found"}, 404
+
+    # 🔹 Update status
     mongo.db.applications.update_one(
         {"_id": ObjectId(application_id)},
         {
@@ -253,5 +261,13 @@ def update_application_status(application_id):
         }
     )
 
-    return {"message": "Status updated"}, 200
+    # 🔔 Create notification
+    create_notification(
+        user_id=str(application["userId"]),
+        title="Application Status Updated",
+        message=f"Your application has been {status}",
+        type="application_status",
+        meta={"applicationId": application_id}
+    )
 
+    return {"message": "Status updated"}, 200

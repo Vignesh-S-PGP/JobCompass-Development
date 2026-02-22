@@ -51,3 +51,24 @@ def save_profile():
     )
 
     return {"message": "Profile saved successfully"}, 200
+
+@profile_bp.route("/me", methods=["GET"])
+@jwt_required()
+def get_profile_summary():
+    user_id = ObjectId(get_jwt_identity())
+
+    user = mongo.db.users.find_one(
+        {"_id": user_id},
+        {"email": 1}
+    )
+
+    profile = mongo.db.jobseeker_profiles.find_one(
+        {"userId": user_id},
+        {"fullName": 1, "profileImage": 1}
+    )
+
+    return {
+        "email": user.get("email") if user else None,
+        "fullName": profile.get("fullName") if profile else None,
+        "profileImage": profile.get("profileImage") if profile else None
+    }, 200
