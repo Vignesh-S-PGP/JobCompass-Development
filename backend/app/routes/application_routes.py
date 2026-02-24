@@ -25,6 +25,14 @@ def apply_job():
     if not job or not resume:
         return {"error": "Invalid job or resume"}, 400
 
+    # STRICTURE: One application per job
+    existing = mongo.db.applications.find_one({
+        "jobId": ObjectId(data["jobId"]),
+        "userId": ObjectId(user_id)
+    })
+    if existing:
+        return {"error": "Already applied to this job"}, 400
+
     ats = calculate_ats_score(
         job_desc=job.get("description", ""),
         resume_text=resume.get("rawText", "")
@@ -62,9 +70,26 @@ def get_applicants(job_id):
     except InvalidId:
         return {"applications": []}, 200
 
-    apps = mongo.db.applications.find(
-        {"jobId": job_oid}
-    ).sort("atsScore", -1)   
+    # Applicants must be sorted by priority using:
+    # 1. ATS Score (DESC)
+    # 2. Matched skills count (DESC)
+    # 3. Missing skills count (ASC)
+    # 4. Applied date (ASC)
+
+    apps = list(mongo.db.applications.find({"jobId": job_oid}))
+
+    def sort_key(a):
+        ats = a.get("ats", {})
+        score = a.get("atsScore", 0)
+        matched_count = len(ats.get("matched_skills", []))
+        missing_count = len(ats.get("missing_skills", []))
+        created_at = a.get("createdAt", datetime.utcnow())
+
+        # Using a tuple for sorting. Python sorts tuples element by element.
+        # We use negative for DESC sorting.
+        return (-score, -matched_count, missing_count, created_at)
+
+    apps.sort(key=sort_key)
 
     result = []
     for a in apps:

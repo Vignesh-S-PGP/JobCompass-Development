@@ -5,7 +5,8 @@ import {
   Briefcase, 
   Building2, 
   ChevronRight,
-  LogOut
+  LogOut,
+  UserCircle
 } from "lucide-react";
 import api from "../../services/api";
 import logo from "../../assets/logo.png";
@@ -38,6 +39,7 @@ export default function RecruiterLayout() {
     { name: "Dashboard", path: "/recruiter/dashboard", icon: <LayoutDashboard size={20} /> },
     { name: "Jobs", path: "/recruiter/jobs", icon: <Briefcase size={20} /> },
     { name: "Company", path: "/recruiter/company", icon: <Building2 size={20} /> },
+    { name: "Profile", path: "/recruiter/profile", icon: <UserCircle size={20} /> },
   ];
 
   if (loading) {

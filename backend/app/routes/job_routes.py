@@ -43,6 +43,66 @@ def list_jobs():
     jobs = list(mongo.db.jobs.find({}, {"_id": 0}))
     return {"jobs": jobs}, 200
 
+@job_bp.route("/<job_id>/status", methods=["PATCH"])
+@jwt_required()
+def update_job_status(job_id):
+    user_id = get_jwt_identity()
+    status = request.json.get("status")
+
+    if status not in ["active", "closed", "paused"]:
+        return {"error": "Invalid status"}, 400
+
+    result = mongo.db.jobs.update_one(
+        {"_id": ObjectId(job_id), "createdBy": ObjectId(user_id)},
+        {"$set": {"status": status, "updatedAt": datetime.utcnow()}}
+    )
+
+    if result.matched_count == 0:
+        return {"error": "Job not found or unauthorized"}, 404
+
+    return {"message": "Job status updated"}, 200
+
+@job_bp.route("/<job_id>", methods=["PUT"])
+@jwt_required()
+def update_job(job_id):
+    user_id = get_jwt_identity()
+    data = request.json
+
+    update_data = {
+        "title": data.get("title"),
+        "description": data.get("description"),
+        "skillsRequired": data.get("skillsRequired", []),
+        "experience": data.get("experience"),
+        "location": data.get("location"),
+        "jobType": data.get("jobType"),
+        "salaryRange": data.get("salaryRange"),
+        "updatedAt": datetime.utcnow()
+    }
+
+    result = mongo.db.jobs.update_one(
+        {"_id": ObjectId(job_id), "createdBy": ObjectId(user_id)},
+        {"$set": update_data}
+    )
+
+    if result.matched_count == 0:
+        return {"error": "Job not found or unauthorized"}, 404
+
+    return {"message": "Job updated successfully"}, 200
+
+@job_bp.route("/<job_id>", methods=["DELETE"])
+@jwt_required()
+def delete_job(job_id):
+    user_id = get_jwt_identity()
+
+    result = mongo.db.jobs.delete_one(
+        {"_id": ObjectId(job_id), "createdBy": ObjectId(user_id)}
+    )
+
+    if result.deleted_count == 0:
+        return {"error": "Job not found or unauthorized"}, 404
+
+    return {"message": "Job deleted successfully"}, 200
+
 @job_bp.route("/recommended", methods=["GET"])
 @jwt_required()
 def recommended_jobs():
@@ -74,10 +134,38 @@ def recommended_jobs():
 def recruiter_jobs():
     user_id = get_jwt_identity()
 
-    jobs = []
-    for j in mongo.db.jobs.find({"createdBy": ObjectId(user_id)}):
-        j["_id"] = str(j["_id"])
-        jobs.append(j)
+    jobs = list(mongo.db.jobs.find({"createdBy": ObjectId(user_id)}))
 
-    return {"jobs": jobs}, 200
+    # Calculate some stats for the recruiter dashboard
+    total_applicants = 0
+    total_shortlisted = 0
+
+    for j in jobs:
+        j["_id"] = str(j["_id"])
+        j["companyId"] = str(j["companyId"])
+
+        # Count applicants for each job
+        app_stats = list(mongo.db.applications.aggregate([
+            {"$match": {"jobId": j["_id"] if isinstance(j["_id"], ObjectId) else ObjectId(j["_id"])}},
+            {"$group": {
+                "_id": "$status",
+                "count": {"$sum": 1}
+            }}
+        ]))
+
+        j["applicantCount"] = sum(item["count"] for item in app_stats)
+        total_applicants += j["applicantCount"]
+        total_shortlisted += next((item["count"] for item in app_stats if item["_id"] == "shortlisted"), 0)
+
+    # Get new messages count (unread logic not fully implemented, so just total for now or mock)
+    # For now let's just return the sums
+
+    return {
+        "jobs": jobs,
+        "stats": {
+            "totalApplicants": total_applicants,
+            "totalShortlisted": total_shortlisted,
+            "activeJobs": len([j for j in jobs if j.get("status") == "active"])
+        }
+    }, 200
 

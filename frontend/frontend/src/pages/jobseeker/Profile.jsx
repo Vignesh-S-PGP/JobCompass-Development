@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import { useNavigate } from "react-router-dom";
 import { 
   Camera, 
   MapPin, 
@@ -9,10 +10,12 @@ import {
   Save, 
   User, 
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  Trash2
 } from "lucide-react";
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     fullName: "",
     headline: "",
@@ -59,6 +62,17 @@ export default function Profile() {
     setSaving(false);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("Are you sure you want to deactivate your account? This action can only be undone by an administrator.")) return;
+    try {
+      await api.delete("/auth/delete-account");
+      localStorage.clear();
+      navigate("/login");
+    } catch (err) {
+      alert("Failed to delete account");
+    }
   };
 
   return (
@@ -146,7 +160,7 @@ export default function Profile() {
         </div>
 
         {/* RIGHT COLUMN: TECHNICAL SPECS */}
-        <div className="lg:col-span-8 space-y-8">
+        <div className="lg:col-span-8 space-y-8 pb-20">
           
           {/* ABOUT SECTION */}
           <div className="bg-white border border-slate-200 rounded-[32px] p-8">
@@ -209,6 +223,24 @@ export default function Profile() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* DANGER ZONE */}
+          <div className="bg-red-50 border border-red-100 rounded-[32px] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+               <h3 className="text-red-900 font-black uppercase tracking-widest text-sm flex items-center gap-2">
+                 <Trash2 size={18} /> Danger Zone
+               </h3>
+               <p className="text-red-700/60 text-xs font-bold mt-1">
+                 Deactivating your account will withdraw all active applications and hide your profile.
+               </p>
+            </div>
+            <button
+              onClick={handleDeleteAccount}
+              className="bg-white text-red-600 px-6 py-3 rounded-2xl border-2 border-red-200 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all shadow-sm"
+            >
+              Deactivate Account
+            </button>
           </div>
         </div>
 

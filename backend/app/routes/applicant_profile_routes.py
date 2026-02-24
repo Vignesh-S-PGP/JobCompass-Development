@@ -45,6 +45,8 @@ def view_applicant_profile(application_id):
             "profile": profile,
             "email": user.get("email"),
             "applicationId": application_id,
+            "ats": application.get("ats", {}),
+            "atsScore": application.get("atsScore", 0),
             "resume": {
                 "id": str(resume["_id"]),
                 "title": resume.get("title"),

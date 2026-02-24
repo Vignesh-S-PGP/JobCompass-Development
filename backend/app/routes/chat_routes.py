@@ -86,16 +86,27 @@ def send_message(conversation_id):
     user_id = get_jwt_identity()
     text = request.json.get("text")
 
-    mongo.db.messages.insert_one({
+    message = {
         "conversationId": ObjectId(conversation_id),
         "senderId": ObjectId(user_id),
         "text": text,
         "createdAt": datetime.utcnow()
-    })
+    }
+
+    mongo.db.messages.insert_one(message)
 
     mongo.db.conversations.update_one(
         {"_id": ObjectId(conversation_id)},
         {"$set": {"updatedAt": datetime.utcnow()}}
     )
+
+    # Emit via Socket.IO
+    from app.extensions.socket import socketio
+    message["_id"] = str(message["_id"])
+    message["conversationId"] = str(message["conversationId"])
+    message["senderId"] = str(message["senderId"])
+    message["createdAt"] = message["createdAt"].isoformat()
+
+    socketio.emit("new_message", message, room=conversation_id)
 
     return {"message": "sent"}, 201

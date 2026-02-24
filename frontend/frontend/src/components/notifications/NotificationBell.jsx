@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import socketService from "../../services/socket";
 
 export default function NotificationBell({ className = "" }) {
   const [open, setOpen] = useState(false);
@@ -8,6 +9,17 @@ export default function NotificationBell({ className = "" }) {
 
   useEffect(() => {
     loadNotifications();
+
+    socketService.connect();
+    socketService.onNotification((notif) => {
+        setNotifications(prev => [notif, ...prev]);
+        // Optional: Play sound or show toast
+    });
+
+    return () => {
+        // We don't necessarily want to disconnect here if the socket is used elsewhere,
+        // but since this component is likely in a layout, it stays mounted.
+    };
   }, []);
 
   const loadNotifications = () => {
