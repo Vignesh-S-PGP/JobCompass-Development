@@ -106,6 +106,7 @@ export default function Register() {
         >
           <option value="job_seeker">Job Seeker</option>
           <option value="recruiter">Recruiter</option>
+          <option value="admin">Admin</option>
         </select>
 
         <button

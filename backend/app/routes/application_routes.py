@@ -19,6 +19,11 @@ def apply_job():
     if not data.get("jobId") or not data.get("resumeId"):
         return {"error": "Missing data"}, 400
 
+
+    job = mongo.db.jobs.find_one({"_id": ObjectId(data["jobId"])})
+    resume = mongo.db.resumes.find_one({"_id": ObjectId(data["resumeId"])})
+    profile = mongo.db.jobseeker_profiles.find_one({"userId": ObjectId(user_id)})
+
     try:
         job_oid = ObjectId(data["jobId"])
         resume_oid = ObjectId(data["resumeId"])
@@ -41,7 +46,9 @@ def apply_job():
 
     ats = calculate_ats_score(
         job_desc=job.get("description", ""),
-        resume_text=resume.get("rawText", "")
+        resume_text=resume.get("rawText", ""),
+        job_skills=job.get("skillsRequired", []),
+        profile_data=profile
     )
 
     app = {
@@ -50,6 +57,8 @@ def apply_job():
         "resumeId": resume_oid,
         "status": "applied",
         "atsScore": ats["score"],
+        "matchedCount": len(ats.get("matched_skills", [])),
+        "missingCount": len(ats.get("missing_skills", [])),
         "ats": ats,
         "createdAt": datetime.utcnow()
     }
@@ -76,6 +85,14 @@ def get_applicants(job_id):
     except InvalidId:
         return {"applications": []}, 200
 
+    apps = mongo.db.applications.find(
+        {"jobId": job_oid}
+    ).sort([
+        ("atsScore", -1),
+        ("matchedCount", -1),
+        ("missingCount", 1),
+        ("createdAt", 1)
+    ])
     user_id = get_jwt_identity()
     claims = get_jwt()
     job = mongo.db.jobs.find_one({"_id": job_oid})
