@@ -40,6 +40,7 @@ def create_app():
     from app.routes.application_routes import application_bp
     from app.routes.notification_routes import notification_bp
     from app.routes.applicant_profile_routes import applicant_profile_bp
+
     from app.routes.admin_routes import admin_bp
     from app.routes.chat_routes import chat_bp
     app.register_blueprint(applicant_profile_bp)
