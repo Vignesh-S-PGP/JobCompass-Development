@@ -1,7 +1,11 @@
-import { Bell } from "lucide-react";
+import { Bell, Circle } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+
 import socketService from "../../services/socket";
+
+import { socket } from "../../services/socket";
+
 
 export default function NotificationBell({ className = "" }) {
   const [open, setOpen] = useState(false);
@@ -9,6 +13,7 @@ export default function NotificationBell({ className = "" }) {
 
   useEffect(() => {
     loadNotifications();
+
 
     socketService.connect();
     socketService.onNotification((notif) => {
@@ -19,6 +24,14 @@ export default function NotificationBell({ className = "" }) {
     return () => {
         // We don't necessarily want to disconnect here if the socket is used elsewhere,
         // but since this component is likely in a layout, it stays mounted.
+
+    socket.on("new_notification", (notif) => {
+      setNotifications(prev => [notif, ...prev]);
+    });
+
+    return () => {
+      socket.off("new_notification");
+
     };
   }, []);
 
@@ -56,29 +69,30 @@ export default function NotificationBell({ className = "" }) {
       </button>
 
       {open && (
-        <div className="absolute bottom-full mb-3 right-0 w-72 bg-[#11162A]
-          border border-white/10 rounded-xl shadow-2xl z-50">
-
-          <div className="px-4 py-2 text-xs font-bold text-slate-400 border-b border-white/10">
-            Notifications
+        <div className="absolute bottom-full mb-4 right-0 w-80 bg-[#11162A] border border-white/10 rounded-[24px] shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="px-6 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Notifications</span>
+            {unreadCount > 0 && <span className="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full">{unreadCount} New</span>}
           </div>
 
-          <div className="max-h-64 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="p-4 text-sm text-slate-500 text-center">
-                No notifications
-              </p>
+              <div className="p-8 text-center">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">All caught up</p>
+              </div>
             ) : (
               notifications.map(n => (
                 <button
                   key={n._id}
                   onClick={() => markAsRead(n._id)}
-                  className={`w-full text-left px-4 py-3 text-sm
-                    ${n.isRead ? "text-slate-400" : "text-white"}
-                    hover:bg-white/5`}
+                  className={`w-full text-left px-6 py-4 transition-all hover:bg-white/5 border-b border-white/5 flex gap-3
+                    ${n.isRead ? "opacity-60" : "bg-indigo-500/5"}`}
                 >
-                  <p className="font-semibold">{n.title}</p>
-                  <p className="text-xs text-slate-400">{n.message}</p>
+                  {!n.isRead && <Circle size={8} fill="#4f46e5" className="text-indigo-600 mt-1 flex-shrink-0" />}
+                  <div>
+                    <p className="font-black text-sm text-white leading-tight mb-1">{n.title}</p>
+                    <p className="text-xs font-bold text-slate-400 leading-relaxed">{n.message}</p>
+                  </div>
                 </button>
               ))
             )}

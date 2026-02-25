@@ -1,6 +1,7 @@
 from app.extensions.db import mongo
 from datetime import datetime
 from bson import ObjectId
+from app.extensions.socket import socketio
 
 def create_notification(user_id, title, message, type, meta=None):
     notif = {
@@ -13,6 +14,7 @@ def create_notification(user_id, title, message, type, meta=None):
         "createdAt": datetime.utcnow()
     }
 
+
     mongo.db.notifications.insert_one(notif)
 
     # Emit via Socket.IO
@@ -22,3 +24,13 @@ def create_notification(user_id, title, message, type, meta=None):
     notif["createdAt"] = notif["createdAt"].isoformat()
 
     socketio.emit("notification", notif, room=str(user_id))
+
+    result = mongo.db.notifications.insert_one(notif)
+
+    # Emit real-time notification
+    notif["_id"] = str(result.inserted_id)
+    notif["userId"] = str(notif["userId"])
+    notif["createdAt"] = notif["createdAt"].isoformat()
+
+    socketio.emit("new_notification", notif, room=str(user_id))
+

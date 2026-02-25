@@ -24,11 +24,20 @@ import ApplicationDetail from "../pages/jobseeker/ApplicationDetail"
 import ChatPage from "../pages/chat/ChatPage"
 import ApplicantProfile from "../pages/recruiter/ApplicantProfile"; 
 
+
 import AdminLayout from "../components/layout/AdminLayout"
 import AdminDashboard from "../pages/admin/Dashboard"
 import UserManagement from "../pages/admin/UserManagement"
 import JobManagement from "../pages/admin/JobManagement"
 import ATSMonitoring from "../pages/admin/ATSMonitoring"
+
+import AdminLayout from "../components/layout/AdminLayout";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import UserManagement from "../pages/admin/UserManagement";
+import JobManagement from "../pages/admin/JobManagement";
+
+// import JobseekerLayout from "../layouts/JobseekerLayout"
+
 
 
 export default function AppRoutes() {
@@ -55,9 +64,8 @@ export default function AppRoutes() {
     {/* ✅ Applied Jobs */}
     <Route path="applications" element={<AppliedJobs />} />
     <Route path="applications/:id" element={<ApplicationDetail />} />
-    <Route path="chat/:applicationId" element={<ChatPage />} />
     <Route path="chat" element={<ChatPage />} />
-<Route path="chat/:conversationId" element={<ChatPage />} />
+    <Route path="chat/:conversationId" element={<ChatPage />} />
   </Route>
 </Route>
 
@@ -65,28 +73,26 @@ export default function AppRoutes() {
       {/* Recruiter */}
       <Route element={<ProtectedRoute role="recruiter" />}>
         <Route path="/recruiter" element={<RecruiterLayout />}>
-
           <Route path="dashboard" element={<RecruiterDashboard />} />
           <Route path="profile" element={<RecruiterProfile />} />
           <Route path="company" element={<Company />} />
           <Route path="jobs/create" element={<CreateJob />} />
-
-          {/* ✅ FIXED JOBS FLOW */}
           <Route path="jobs" element={<RecruiterJobs />} />
           <Route path="jobs/:jobId/applicants" element={<Applicants />} />
+          <Route path="applicants/:applicationId/profile" element={<ApplicantProfile />} />
+          <Route path="chat" element={<ChatPage />} />
           <Route path="chat/:conversationId" element={<ChatPage />} />
-           {/* Applicant Profile */}
-    <Route
-      path="applicants/:applicationId/profile"
-      element={<ApplicantProfile />}
-    />
-
-    {/* Chat */}
-    <Route
-      path="chat/:applicationId"
-      element={<ChatPage />}
-    />
         </Route>
+      </Route>
+
+      {/* Admin */}
+      <Route element={<ProtectedRoute role="admin" />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="jobs" element={<JobManagement />} />
+        </Route>
+
       </Route>
 
       {/* Admin */}
@@ -97,6 +103,7 @@ export default function AppRoutes() {
           <Route path="jobs" element={<JobManagement />} />
           <Route path="ats" element={<ATSMonitoring />} />
         </Route>
+
       </Route>
 
       {/* Fallback */}

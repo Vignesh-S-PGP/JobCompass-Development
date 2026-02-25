@@ -5,35 +5,46 @@ import re
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL = "phi3:mini"
 
-def calculate_ats_score(job_desc: str, resume_text: str):
+def calculate_ats_score(job_desc: str, resume_text: str, job_skills: list = None, profile_data: dict = None):
+    job_skills_str = ", ".join(job_skills) if job_skills else "Not specified"
+
+    profile_str = ""
+    if profile_data:
+        profile_str = f"""
+Applicant Profile Info:
+- Skills: {", ".join(profile_data.get("skills", []))}
+- Experience: {profile_data.get("experience", "Not specified")} years
+- Education: {json.dumps(profile_data.get("education", []))}
+- Bio: {profile_data.get("bio", "Not specified")}
+"""
+
     prompt = f"""
-You are a strict Applicant Tracking System (ATS).
+You are a highly advanced Applicant Tracking System (ATS) Expert. Your goal is to provide a precise and objective evaluation of a candidate based on multiple data points.
 
-You MUST calculate a NUMERIC score.
-Different resumes MUST produce different scores.
-
-SCORING RULES:
-- Start from 100
-- Deduct points for:
-  - Missing required skills (10–20 each)
-  - Weak experience (5–15)
-  - Irrelevant content (5–10)
-- Final score MUST reflect deductions
+SCORING GUIDELINES (Total 100 points):
+1. Skill Match (40 pts): Compare resume and profile skills against job requirements.
+2. Experience Relevance (30 pts): Evaluate years and quality of experience.
+3. Educational Alignment (20 pts): Check if education meets industry standards for the role.
+4. Overall Profile Strength (10 pts): Bio, headline, and consistency.
 
 Job Description:
 {job_desc}
 
-Resume:
+Required Skills:
+{job_skills_str}
+
+Resume Content:
 {resume_text}
 
-Return ONLY valid JSON in this format:
+{profile_str}
 
-{{
-  "score": <integer between 0 and 100>,
-  "matched_skills": ["..."],
-  "missing_skills": ["..."],
-  "reason": "Explain deductions clearly"
-}}
+Analyze the data and return a JSON object with:
+- "score": (integer 0-100)
+- "matched_skills": List of skills found in both requirements and candidate data.
+- "missing_skills": List of required skills not found in candidate data.
+- "reason": A detailed breakdown of the score based on the guidelines above.
+
+Return ONLY valid JSON.
 """
 
     payload = {

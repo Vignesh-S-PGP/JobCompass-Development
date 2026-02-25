@@ -43,6 +43,8 @@ def create_app():
     from app.routes.admin_routes import admin_bp
     from app.routes.chat_routes import chat_bp
 
+    from app.routes.admin_routes import admin_bp
+    from app.routes.chat_routes import chat_bp
     app.register_blueprint(applicant_profile_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(resume_bp)
