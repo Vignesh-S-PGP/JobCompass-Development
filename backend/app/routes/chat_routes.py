@@ -1,101 +1,161 @@
+from datetime import datetime
+from bson import ObjectId
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from bson import ObjectId
-from datetime import datetime
 from app.extensions.db import mongo
+from app.extensions.socket import socketio
 
 chat_bp = Blueprint("chat", __name__, url_prefix="/api/chat")
+
+
+# ---------------- HELPER ----------------
+def get_profile(user_id):
+    user = mongo.db.users.find_one({"_id": user_id})
+    if not user:
+        return {
+            "name": "Unknown",
+            "profileImage": None,
+            "role": None
+        }
+
+    if user["role"] == "job_seeker":
+        profile = mongo.db.jobseekerprofiles.find_one({"userId": user_id})
+    else:
+        profile = mongo.db.recruiterprofiles.find_one({"userId": user_id})
+
+    return {
+        "name": profile.get("fullName") if profile else user["email"],
+        "profileImage": profile.get("profileImage") if profile else None,
+        "role": user["role"]
+    }
 
 @chat_bp.route("/my", methods=["GET"])
 @jwt_required()
 def my_conversations():
-    user_id = get_jwt_identity()
+    user_id = ObjectId(get_jwt_identity())
 
-    conversations = list(
-        mongo.db.conversations.find(
-            {"participants": ObjectId(user_id)}
-        ).sort("updatedAt", -1)
-    )
+    conversations = mongo.db.conversations.find(
+        {"participants": user_id}
+    ).sort("updatedAt", -1)
 
-    for c in conversations:
-        c["_id"] = str(c["_id"])
-        c["applicationId"] = str(c["applicationId"])
+    results = []
 
-    return {"conversations": conversations}, 200
+    for convo in conversations:
+        convo_id = str(convo["_id"])
 
+        other_user_id = next(pid for pid in convo["participants"] if pid != user_id)
+        user = mongo.db.users.find_one({"_id": other_user_id})
 
+        name = user.get("email")
+        profile_image = None
 
-# 1️⃣ Start or get conversation
-@chat_bp.route("/start", methods=["POST"])
-@jwt_required()
-def start_chat():
-    user_id = get_jwt_identity()
-    data = request.json
-    application_id = data.get("applicationId")
+        # ✅ CORRECT COLLECTION NAMES
+        profile = None
+        if user["role"] == "job_seeker":
+            profile = mongo.db.jobseeker_profiles.find_one(
+                {"userId": other_user_id}
+            )
+        elif user["role"] == "recruiter":
+            profile = mongo.db.recruiter_profiles.find_one(
+                {"userId": other_user_id}
+            )
 
-    application = mongo.db.applications.find_one(
-        {"_id": ObjectId(application_id)}
-    )
+        if profile:
+            name = profile.get("fullName", name)
+            profile_image = profile.get("profileImage")
 
-    if not application:
-        return {"error": "Invalid application"}, 400
+        last_msg = mongo.db.messages.find_one(
+            {"conversationId": convo["_id"]},
+            sort=[("createdAt", -1)]
+        )
 
-    participants = [
-        ObjectId(user_id),
-        application["userId"]
-    ]
-
-    conversation = mongo.db.conversations.find_one({
-        "applicationId": ObjectId(application_id)
-    })
-
-    if not conversation:
-        result = mongo.db.conversations.insert_one({
-            "participants": participants,
-            "applicationId": ObjectId(application_id),
-            "updatedAt": datetime.utcnow()
+        unread_count = mongo.db.messages.count_documents({
+            "conversationId": convo["_id"],
+            "senderId": {"$ne": user_id},
+            "readAt": None
         })
-        conversation_id = result.inserted_id
-    else:
-        conversation_id = conversation["_id"]
 
-    return {"conversationId": str(conversation_id)}, 200
+        results.append({
+            "_id": convo_id,
+            "participant": {
+                "_id": str(other_user_id),
+                "name": name,
+                "profileImage": profile_image,
+                "role": user["role"]
+            },
+            "lastMessage": last_msg["text"] if last_msg else "",
+            "lastMessageAt": (
+                last_msg["createdAt"].isoformat() if last_msg else None
+            ),
+            "unreadCount": unread_count
+        })
+
+    return {"conversations": results}, 200
 
 
-# 2️⃣ Get messages
-@chat_bp.route("/<conversation_id>/messages", methods=["GET"])
+# ---------------- GET MESSAGES ----------------
+@chat_bp.route("/<cid>/messages", methods=["GET"])
 @jwt_required()
-def get_messages(conversation_id):
-    messages = list(
-        mongo.db.messages.find(
-            {"conversationId": ObjectId(conversation_id)}
-        ).sort("createdAt", 1)
-    )
+def get_messages(cid):
+    user_oid = ObjectId(get_jwt_identity())
+    convo_oid = ObjectId(cid)
 
+    messages = mongo.db.messages.find(
+        {"conversationId": convo_oid}
+    ).sort("createdAt", 1)
+
+    result = []
     for m in messages:
-        m["_id"] = str(m["_id"])
-        m["senderId"] = str(m["senderId"])
+        result.append({
+            "_id": str(m["_id"]),
+            "senderId": str(m["senderId"]),
+            "text": m["text"],
+            "createdAt": m["createdAt"].isoformat(),
+            "readAt": m["readAt"].isoformat() if m.get("readAt") else None
+        })
 
-    return {"messages": messages}, 200
-
-
-# 3️⃣ Send message
-@chat_bp.route("/<conversation_id>/messages", methods=["POST"])
-@jwt_required()
-def send_message(conversation_id):
-    user_id = get_jwt_identity()
-    text = request.json.get("text")
-
-    mongo.db.messages.insert_one({
-        "conversationId": ObjectId(conversation_id),
-        "senderId": ObjectId(user_id),
-        "text": text,
-        "createdAt": datetime.utcnow()
-    })
-
-    mongo.db.conversations.update_one(
-        {"_id": ObjectId(conversation_id)},
-        {"$set": {"updatedAt": datetime.utcnow()}}
+    # mark messages as read
+    mongo.db.messages.update_many(
+        {
+            "conversationId": convo_oid,
+            "senderId": {"$ne": user_oid},
+            "readAt": None
+        },
+        {"$set": {"readAt": datetime.utcnow()}}
     )
 
-    return {"message": "sent"}, 201
+    return {"messages": result}, 200
+
+
+# ---------------- SEND MESSAGE ----------------
+@chat_bp.route("/<cid>/messages", methods=["POST"])
+@jwt_required()
+def send_message(cid):
+    user_oid = ObjectId(get_jwt_identity())
+    convo_oid = ObjectId(cid)
+
+    text = request.json.get("text", "").strip()
+    if not text:
+        return {"error": "Text required"}, 400
+
+    message = {
+        "conversationId": convo_oid,
+        "senderId": user_oid,
+        "text": text,
+        "createdAt": datetime.utcnow(),
+        "readAt": None
+    }
+
+    res = mongo.db.messages.insert_one(message)
+
+    payload = {
+        "_id": str(res.inserted_id),
+        "conversationId": str(convo_oid),
+        "senderId": str(user_oid),
+        "text": text,
+        "createdAt": message["createdAt"].isoformat(),
+        "readAt": None
+    }
+
+    socketio.emit("new_message", payload, room=str(convo_oid))
+    return payload, 201

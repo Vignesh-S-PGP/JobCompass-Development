@@ -18,7 +18,8 @@ export default function JobDetails({ job, onBack }) {
   const [resumeId, setResumeId] = useState("");
   const [atsLoading, setAtsLoading] = useState(false);
   const [atsResult, setAtsResult] = useState(null);
-
+  const [applyError, setApplyError] = useState("");
+const [popupMessage, setPopupMessage] = useState("");
   const company = job.company || {};
 
   useEffect(() => {
@@ -27,20 +28,32 @@ export default function JobDetails({ job, onBack }) {
     );
   }, []);
 
-  const applyJob = async () => {
-    if (!resumeId) return alert("Select a resume to initiate deployment.");
-    setAtsLoading(true);
-    try {
-      const res = await api.post("/applications/apply", {
-        jobId: job._id,
-        resumeId
-      });
-      setAtsResult(res.data);
-    } finally {
-      setAtsLoading(false);
-    }
-  };
+const applyJob = async () => {
+  if (!resumeId) {
+    setPopupMessage("Please select a resume before applying.");
+    return;
+  }
 
+  setAtsLoading(true);
+
+  try {
+    const res = await api.post("/applications/apply", {
+      jobId: job._id,
+      resumeId
+    });
+
+    setAtsResult(res.data);
+
+  } catch (err) {
+    if (err.response?.status === 409) {
+      setPopupMessage("You have already applied for this job.");
+    } else {
+      setPopupMessage("Something went wrong. Please try again.");
+    }
+  } finally {
+    setAtsLoading(false);
+  }
+};
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-20">
       {/* 01. NAVIGATION & QUICK ACTIONS */}
@@ -127,6 +140,29 @@ export default function JobDetails({ job, onBack }) {
             )}
           </div>
         </div>
+        {applyError && (
+  <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-[11px] font-bold">
+    {applyError}
+  </div>
+)}
+{popupMessage && (
+  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+      <h3 className="text-lg font-black text-slate-900 mb-2">
+        Action Blocked
+      </h3>
+      <p className="text-sm text-slate-600 mb-6">
+        {popupMessage}
+      </p>
+      <button
+        onClick={() => setPopupMessage("")}
+        className="w-full bg-slate-900 text-white py-2.5 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-indigo-600 transition"
+      >
+        Got it
+      </button>
+    </div>
+  </div>
+)}
 
         {/* 04. DEPLOYMENT PANEL */}
         <div className="lg:col-span-4 space-y-6">

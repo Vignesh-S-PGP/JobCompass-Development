@@ -22,10 +22,14 @@ export default function JobSeekerLayout() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profile, setProfile] = useState(null);
 
- useEffect(() => {
+useEffect(() => {
   api.get("/profile/me")
     .then(res => setProfile(res.data))
-    .catch(() => setProfile(null));
+    .catch(err => {
+      console.warn("⚠️ Profile load failed", err.response?.status);
+      // DO NOT redirect here
+      setProfile(null);
+    });
 }, []);
 
   const handleLogout = () => {

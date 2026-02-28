@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()   # 🔥 MUST be first – before any app imports
+
 from app.main import create_app
 from app.extensions.socket import socketio
 
@@ -8,5 +11,6 @@ if __name__ == "__main__":
         app,
         host="127.0.0.1",
         port=5000,
-        debug=False
+        debug=True,
+        use_reloader=False  # ✅ correct for SocketIO
     )

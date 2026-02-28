@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, NavLink, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Briefcase, 
-  Building2, 
+import {
+  LayoutDashboard,
+  Briefcase,
+  Building2,
   ChevronRight,
-  LogOut
+  LogOut,
+  UserCircle,
+  MessageSquare,
 } from "lucide-react";
 import api from "../../services/api";
 import logo from "../../assets/logo.png";
+import NotificationBell from "../notifications/NotificationBell";
 
 export default function RecruiterLayout() {
   const navigate = useNavigate();
@@ -38,6 +41,11 @@ export default function RecruiterLayout() {
     { name: "Dashboard", path: "/recruiter/dashboard", icon: <LayoutDashboard size={20} /> },
     { name: "Jobs", path: "/recruiter/jobs", icon: <Briefcase size={20} /> },
     { name: "Company", path: "/recruiter/company", icon: <Building2 size={20} /> },
+
+    { name: "Profile", path: "/recruiter/profile", icon: <UserCircle size={20} /> },
+
+    { name: "Messages", path: "/recruiter/chat", icon: <MessageSquare size={20} /> },
+
   ];
 
   if (loading) {
@@ -107,8 +115,15 @@ export default function RecruiterLayout() {
           ))}
         </nav>
 
-        {/* Bottom Section: Logout Only */}
-        <div className="p-4 mt-auto border-t border-white/5">
+        {/* Bottom Section: Logout & Notifications */}
+        <div className="p-4 mt-auto border-t border-white/5 space-y-2">
+          {!isCollapsed && (
+            <div className="flex items-center justify-between px-4 py-2 bg-white/5 rounded-xl">
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Notifications</span>
+               <NotificationBell className="text-white" />
+            </div>
+          )}
+
           <button
             onClick={handleLogout}
             className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all

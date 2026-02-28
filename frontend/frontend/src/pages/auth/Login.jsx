@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import api from "../../services/api"
 import { getUserFromToken } from "../../utils/auth"
 
@@ -30,6 +30,8 @@ if (user.role === "job_seeker") {
   navigate("/jobseeker/dashboard")
 } else if (user.role === "recruiter") {
   navigate("/recruiter/dashboard")
+} else if (user.role === "admin") {
+  navigate("/admin/dashboard")
 }
 
 
@@ -68,11 +70,17 @@ if (user.role === "job_seeker") {
         <input
           type="password"
           placeholder="Password"
-          className="w-full mb-4 px-4 py-2 border rounded"
+          className="w-full mb-1 px-4 py-2 border rounded"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+
+        <div className="flex justify-end mb-4">
+            <Link to="/forgot-password" size="sm" className="text-xs text-indigo-600 hover:underline">
+                Forgot password?
+            </Link>
+        </div>
 
         <button
           type="submit"

@@ -1,71 +1,138 @@
-import requests
 import json
-import re
+from openai import OpenAI
+import os
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "phi3:mini"
+# ---------------- CONFIG ----------------
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise RuntimeError("❌ GROQ_API_KEY not found. Did you load .env?")
+
+client = OpenAI(
+    api_key=GROQ_API_KEY,
+    base_url="https://api.groq.com/openai/v1",
+)
+
+MODEL = "llama-3.3-70b-versatile"
+
 
 def calculate_ats_score(job_desc: str, resume_text: str):
+    """
+    AI → ONLY skill extraction
+    Python → scoring, summary, recommendations
+    """
+
     prompt = f"""
-You are a strict Applicant Tracking System (ATS).
+You are a strict information extraction engine.
 
-You MUST calculate a NUMERIC score.
-Different resumes MUST produce different scores.
+TASK:
+1. Extract ONLY REQUIRED or MUST-HAVE technical skills from the Job Description.
+2. Ignore soft skills, responsibilities, tools mentioned as optional, or nice-to-have.
+3. Extract ONLY skills that are explicitly mentioned in the Resume.
 
-SCORING RULES:
-- Start from 100
-- Deduct points for:
-  - Missing required skills (10–20 each)
-  - Weak experience (5–15)
-  - Irrelevant content (5–10)
-- Final score MUST reflect deductions
+RULES:
+- Output ONLY valid JSON
+- No explanations
+- No markdown
+- No opinions
+- No scoring
+- No summaries
+- Skills must be short canonical names (e.g., "React", "TypeScript", "REST API")
 
-Job Description:
+JOB DESCRIPTION:
 {job_desc}
 
-Resume:
+RESUME:
 {resume_text}
 
-Return ONLY valid JSON in this format:
-
+RETURN JSON ONLY:
 {{
-  "score": <integer between 0 and 100>,
-  "matched_skills": ["..."],
-  "missing_skills": ["..."],
-  "reason": "Explain deductions clearly"
+  "required_skills": [],
+  "resume_skills": []
 }}
 """
 
-    payload = {
-        "model": MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "temperature": 0.1,
-            "top_p": 0.9
-        }
-    }
-
     try:
-        res = requests.post(OLLAMA_URL, json=payload, timeout=300)
-        data = res.json()
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": "You extract structured technical data only."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.0,
+            max_tokens=600,
+        )
 
-        raw = data.get("response", "")
-        print("\nRAW AI RESPONSE:\n", raw)
+        raw = response.choices[0].message.content.strip()
+        print("\n🔥 RAW GROQ RESPONSE 🔥\n", raw)
 
-        match = re.search(r"\{.*\}", raw, re.S)
-        if not match:
-            raise ValueError("No JSON found")
+        start = raw.find("{")
+        end = raw.rfind("}")
 
-        ats = json.loads(match.group())
-        ats["score"] = max(0, min(100, int(ats["score"])))
+        if start == -1 or end == -1:
+            raise ValueError("No JSON object returned")
 
-        return ats
+        extracted = json.loads(raw[start:end + 1])
+
+        # ---------------- NORMALIZATION ----------------
+        required = sorted(set(s.strip() for s in extracted.get("required_skills", [])))
+        resume = sorted(set(s.strip() for s in extracted.get("resume_skills", [])))
+
+        # ---------------- MATCHING ----------------
+        matched = sorted(set(required).intersection(resume))
+        missing = sorted(set(required) - set(matched))
+
+        # ---------------- SCORING (MORE REALISTIC) ----------------
+        if not required:
+            score = 0
+        else:
+            base_score = (len(matched) / len(required)) * 100
+
+            # Penalty for weak coverage
+            if len(matched) / len(required) < 0.7:
+                base_score -= 10
+
+            score = round(max(0, min(100, base_score)))
+
+        # ---------------- SUMMARY (PERCENT-AWARE) ----------------
+        if score >= 85:
+            summary = f"Strong alignment: the resume matches most of the required skills, scoring {score} out of 100."
+        elif score >= 60:
+            summary = f"Moderate alignment: the resume meets several key requirements but misses some important skills, scoring {score} out of 100."
+        elif score > 0:
+            summary = f"Low alignment: the resume matches only a small portion of the required skills, resulting in a score of {score} out of 100."
+        else:
+            summary = "No meaningful alignment detected between the resume and job requirements."
+
+        # ---------------- RECOMMENDATIONS (DATA-DRIVEN) ----------------
+        recommendations = []
+        for skill in missing[:3]:
+            recommendations.append(
+                f"Build or highlight hands-on experience with {skill} to improve alignment with this role."
+            )
+
+        if not recommendations:
+            recommendations.append(
+                "Your skill set aligns well with the role. Focus on deepening expertise and showcasing impact."
+            )
+
+        return {
+            "required_skills": required,
+            "resume_skills": resume,
+            "matched_skills": matched,
+            "missing_skills": missing,
+            "score": score,                     # ✅ clearly out of 100
+            "summary": summary,                 # ✅ score-aware explanation
+            "recommendations": recommendations  # ✅ derived, not hallucinated
+        }
 
     except Exception as e:
-        print("TS AI ERROR:", e)
+        print("❌ ATS AI ERROR:", e)
         return {
+            "required_skills": [],
+            "resume_skills": [],
+            "matched_skills": [],
+            "missing_skills": [],
             "score": 0,
-            "reason": "AI scoring failed"
+            "summary": "ATS analysis failed.",
+            "recommendations": ["Please try again later."]
         }
-

@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.extensions.db import mongo
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -14,41 +14,84 @@ application_bp = Blueprint("applications", __name__, url_prefix="/api/applicatio
 @jwt_required()
 def apply_job():
     user_id = get_jwt_identity()
-    data = request.json
+    data = request.json or {}
 
+    # ---------------- BASIC VALIDATION ----------------
     if not data.get("jobId") or not data.get("resumeId"):
-        return {"error": "Missing data"}, 400
+        return {"error": "Missing jobId or resumeId"}, 400
 
-    job = mongo.db.jobs.find_one({"_id": ObjectId(data["jobId"])})
-    resume = mongo.db.resumes.find_one({"_id": ObjectId(data["resumeId"])})
+    try:
+        job_oid = ObjectId(data["jobId"])
+        resume_oid = ObjectId(data["resumeId"])
+        user_oid = ObjectId(user_id)
+    except Exception:
+        return {"error": "Invalid IDs"}, 400
 
-    if not job or not resume:
-        return {"error": "Invalid job or resume"}, 400
+    # ---------------- FETCH JOB ----------------
+    job = mongo.db.jobs.find_one({"_id": job_oid})
+    if not job:
+        return {"error": "Job not found"}, 404
 
-    ats = calculate_ats_score(
-        job_desc=job.get("description", ""),
-        resume_text=resume.get("rawText", "")
+    if job.get("status") in {"closed", "paused"}:
+        return {"error": "This job is not accepting applications"}, 400
+
+    # ---------------- FETCH RESUME ----------------
+    resume = mongo.db.resumes.find_one({
+        "_id": resume_oid,
+        "userId": user_oid
+    })
+    if not resume:
+        return {"error": "Resume not found"}, 404
+
+    # ---------------- CHECK DUPLICATE APPLICATION ----------------
+    existing = mongo.db.applications.find_one({
+        "jobId": job_oid,
+        "userId": user_oid
+    })
+    if existing:
+        return {"error": "You have already applied to this job"}, 409
+
+    # ---------------- EXTRACT RESUME TEXT (🔥 FIX) ----------------
+    resume_text = (
+        resume.get("rawText")
+        or resume.get("text")
+        or resume.get("content")
     )
 
-    app = {
-        "jobId": ObjectId(data["jobId"]),
-        "userId": ObjectId(user_id),
-        "resumeId": ObjectId(data["resumeId"]),
+    if not resume_text:
+        return {"error": "Resume text is empty or not parsed"}, 400
+
+    # ---------------- ATS SCORING ----------------
+    ats = calculate_ats_score(
+        job_desc=job.get("description", ""),
+        resume_text=resume_text
+    )
+
+    # ---------------- CREATE APPLICATION ----------------
+    application = {
+        "jobId": job_oid,
+        "userId": user_oid,
+        "resumeId": resume_oid,
         "status": "applied",
-        "atsScore": ats["score"],
+        "atsScore": ats.get("score", 0),
+        "matchedCount": len(ats.get("matched_skills", [])),
+        "missingCount": len(ats.get("missing_skills", [])),
         "ats": ats,
         "createdAt": datetime.utcnow()
     }
 
-    mongo.db.applications.insert_one(app)
+    mongo.db.applications.insert_one(application)
 
+    # ---------------- RESPONSE ----------------
     return {
     "message": "Applied successfully",
-    "atsScore": ats["score"],
+    "atsScore": ats.get("score", 0),
     "ats": {
-        "score": ats["score"],
+        "score": ats.get("score", 0),
         "matched_skills": ats.get("matched_skills", []),
         "missing_skills": ats.get("missing_skills", []),
+        "summary": ats.get("summary", ""),
+        "recommendations": ats.get("recommendations", []),
         "reason": ats.get("reason", "")
     }
 }, 201
@@ -62,9 +105,58 @@ def get_applicants(job_id):
     except InvalidId:
         return {"applications": []}, 200
 
+    # Applicants must be sorted by priority using:
+    # 1. ATS Score (DESC)
+    # 2. Matched skills count (DESC)
+    # 3. Missing skills count (ASC)
+    # 4. Applied date (ASC)
+
+    apps = list(mongo.db.applications.find({"jobId": job_oid}))
+
+    def sort_key(a):
+        ats = a.get("ats", {})
+        score = a.get("atsScore", 0)
+        matched_count = len(ats.get("matched_skills", []))
+        missing_count = len(ats.get("missing_skills", []))
+        created_at = a.get("createdAt", datetime.utcnow())
+
+        # Using a tuple for sorting. Python sorts tuples element by element.
+        # We use negative for DESC sorting.
+        return (-score, -matched_count, missing_count, created_at)
+
     apps = mongo.db.applications.find(
         {"jobId": job_oid}
-    ).sort("atsScore", -1)   
+    ).sort([
+        ("atsScore", -1),
+        ("matchedCount", -1),
+        ("missingCount", 1),
+        ("createdAt", 1)
+    ])
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    job = mongo.db.jobs.find_one({"_id": job_oid})
+    if not job:
+        return {"applications": []}, 200
+
+    if claims.get("role") != "admin" and job.get("createdBy") != ObjectId(user_id):
+        return {"error": "Forbidden"}, 403
+
+    apps = list(mongo.db.applications.find({"jobId": job_oid}))
+
+    def sort_key(application):
+        ats = application.get("ats", {})
+        matched_skills = len(ats.get("matched_skills", []))
+        missing_skills = len(ats.get("missing_skills", []))
+        created_at = application.get("createdAt") or datetime.max
+        return (
+            -application.get("atsScore", 0),
+            -matched_skills,
+            missing_skills,
+            created_at,
+        )
+
+
+    apps.sort(key=sort_key)
 
     result = []
     for a in apps:
@@ -84,15 +176,6 @@ def get_applicants(job_id):
         })
 
     return {"applications": result}, 200
-
-@application_bp.route("/<app_id>/status", methods=["PUT"])
-@jwt_required()
-def update_status(app_id):
-    mongo.db.applications.update_one(
-        {"_id": ObjectId(app_id)},
-        {"$set": {"status": request.json.get("status")}}
-    )
-    return {"message": "Status updated"}, 200
 
 @application_bp.route("/my", methods=["GET"])
 @jwt_required()
@@ -249,6 +332,15 @@ def update_application_status(application_id):
 
     if not application:
         return {"error": "Application not found"}, 404
+
+    recruiter_id = get_jwt_identity()
+    claims = get_jwt()
+    job = mongo.db.jobs.find_one({"_id": application.get("jobId")})
+    if not job:
+        return {"error": "Job not found"}, 404
+
+    if claims.get("role") != "admin" and job.get("createdBy") != ObjectId(recruiter_id):
+        return {"error": "Forbidden"}, 403
 
     # 🔹 Update status
     mongo.db.applications.update_one(
