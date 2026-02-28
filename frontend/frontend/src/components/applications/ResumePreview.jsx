@@ -30,11 +30,9 @@ export default function ResumePreview({ resume }) {
             onClick={() => setOpen(true)}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
           >
-            <Eye size={14} /> Open Document
+            <Eye size={14} /> View
           </button>
-          <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-500 hover:bg-slate-100 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-100 transition-all">
-            <Download size={14} /> Download
-          </button>
+
         </div>
       </div>
 

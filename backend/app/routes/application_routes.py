@@ -275,7 +275,7 @@ def get_application_detail(application_id):
     if job and job.get("companyId"):
         company = mongo.db.companies.find_one(
             {"_id": ObjectId(job["companyId"])},
-            {"name": 1, "logo": 1, "location": 1}
+            {"name": 1, "logo": 1, "location": 1,"about":1,"website":1}
         )
 
     resume = None
@@ -289,36 +289,42 @@ def get_application_detail(application_id):
 )
 
     return {
-        "application": {
-            "id": str(application["_id"]),
-            "status": application.get("status"),
-            "atsScore": application.get("atsScore"),
-            "ats": application.get("ats", {}),
-            "appliedAt": application.get("createdAt"),
+    "application": {
+        "id": str(application["_id"]),
+        "status": application.get("status"),
+        "atsScore": application.get("atsScore"),
+        "ats": application.get("ats", {}),
 
-            "job": {
-                "_id": str(job["_id"]),
-                "title": job.get("title"),
-                "description": job.get("description"),
-                "location": job.get("location"),
-                "jobType": job.get("jobType")
-            } if job else None,
+        # 🔥 FIXED HERE
+        "appliedAt": application["createdAt"].isoformat()
+            if application.get("createdAt")
+            else None,
 
-            "company": {
+        "job": {
+            "_id": str(job["_id"]),
+            "title": job.get("title"),
+            "description": job.get("description"),
+            "location": job.get("location"),
+            "jobType": job.get("jobType")
+        } if job else None,
+
+        "company": {
             "_id": str(company["_id"]),
             "name": company.get("name"),
             "logo": company.get("logo"),
             "location": company.get("location"),
             "industry": company.get("industry"),
-            } if company else None,
+            "about":company.get("about"),
+            "website":company.get("website"),
+        } if company else None,
 
-            "resume": {
+        "resume": {
             "_id": str(resume["_id"]),
             "title": resume.get("title"),
             "filename": resume.get("filename")
-            } if resume else None
-        }
-    }, 200
+        } if resume else None
+    }
+}, 200
 
 @application_bp.route("/<application_id>/status", methods=["PATCH"])
 @jwt_required()

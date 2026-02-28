@@ -10,6 +10,19 @@ from flask_jwt_extended import (
 from app.utils.decorators import role_required
 from datetime import datetime
 from app.extensions.db import mongo
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from flask import Blueprint, request
+from flask_jwt_extended import create_access_token
+from datetime import timedelta
+from app.extensions.db import mongo
+from google.oauth2 import id_token
+from google.auth.transport import requests
+import os
+from flask_mail import Message
+from app.extensions.mail import mail
+
+GOOGLE_CLIENT_ID =""
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -85,7 +98,17 @@ def forgot_password():
         "createdAt": datetime.utcnow()
     })
 
-    print(f"DEBUG: Password reset token for {email}: {token}")
+    
+
+    reset_link = f"http://localhost:5173/reset-password?token={token}"
+
+    msg = Message(
+    subject="Reset your JobCompass password",
+    recipients=[email],
+    body=f"Click the link to reset your password:\n{reset_link}"
+    )
+
+    mail.send(msg)
 
     return {"message": "If that email exists, a reset link has been sent."}, 200
 
@@ -113,13 +136,81 @@ def reset_password():
 
     return {"message": "Password reset successful"}, 200
 
-@auth_bp.route("/delete-account", methods=["DELETE"])
-@jwt_required()
-def delete_account():
-    user_id = get_jwt_identity()
-    mongo.db.users.update_one(
-        {"_id": ObjectId(user_id)},
-        {"$set": {"isActive": False, "deletedAt": datetime.utcnow()}}
-    )
-    return {"message": "Account deactivated"}, 200
+@auth_bp.route("/google-login", methods=["POST"])
+def google_login():
+    token = request.json.get("token")
 
+    try:
+        info = id_token.verify_oauth2_token(
+            token,
+            requests.Request(),
+            os.getenv("GOOGLE_CLIENT_ID")
+        )
+
+        email = info["email"]
+
+        user = mongo.db.users.find_one({"email": email})
+
+        if not user:
+            user = {
+                "email": email,
+                "passwordHash": None,
+                "role": "job_seeker",
+                "isActive": True,
+                "createdAt": datetime.utcnow(),
+                "updatedAt": datetime.utcnow()
+            }
+            result = mongo.db.users.insert_one(user)
+            user["_id"] = result.inserted_id
+
+        access_token = create_access_token(
+            identity=str(user["_id"]),
+            additional_claims={"role": user["role"]}
+        )
+
+        return {
+            "accessToken": access_token,
+            "role": user["role"]
+        }, 200
+
+    except Exception as e:
+        return {"error": "Invalid Google token"}, 401
+    
+@auth_bp.route("/microsoft-login", methods=["POST"])
+def microsoft_login():
+    data = request.json
+    email = data.get("email")
+    microsoft_id = data.get("sub")
+
+    if not email or not microsoft_id:
+        return {"error": "Invalid Microsoft token"}, 400
+
+    user = mongo.db.users.find_one({"email": email})
+
+    if not user:
+        user = {
+            "email": email,
+            "role": "job_seeker",
+            "provider": "microsoft",
+            "providerId": microsoft_id,
+            "isActive": True
+        }
+        mongo.db.users.insert_one(user)
+
+    access_token = create_access_token(
+        identity=str(user["_id"]),
+        additional_claims={"role": user["role"]}
+    )
+
+    return {"accessToken": access_token, "role": user["role"]}, 200
+
+from flask_mail import Message
+from app.extensions.mail import mail
+
+def send_reset_email(email, token):
+    msg = Message(
+        subject="Reset your JobCompass password",
+        recipients=[email],
+        body=f"Reset link: http://localhost:5173/reset-password?token={token}"
+    )
+    mail.send(msg)

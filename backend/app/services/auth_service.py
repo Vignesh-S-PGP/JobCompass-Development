@@ -15,7 +15,7 @@ def register_user(data):
     if not email or not password or not role:
         return None, "Missing required fields"
 
-    if role not in ["job_seeker", "recruiter", "admin"]:
+    if role not in ["job_seeker", "recruiter"]:
         return None, "Invalid role"
 
     if mongo.db.users.find_one({"email": email}):

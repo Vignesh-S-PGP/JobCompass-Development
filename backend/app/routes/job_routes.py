@@ -169,3 +169,22 @@ def recruiter_jobs():
         }
     }, 200
 
+@job_bp.route("/<job_id>", methods=["GET"])
+@jwt_required()
+def get_job_detail(job_id):
+    user_id = ObjectId(get_jwt_identity())
+
+    job = mongo.db.jobs.find_one({
+        "_id": ObjectId(job_id),
+        "createdBy": user_id   # 🔐 OWNER CHECK
+    })
+
+    if not job:
+        return {"error": "Job not found or unauthorized"}, 404
+
+    job["_id"] = str(job["_id"])
+    job["companyId"] = str(job["companyId"])
+    job["createdBy"] = str(job["createdBy"])
+    job["createdAt"] = job["createdAt"].isoformat()
+
+    return {"job": job}, 200

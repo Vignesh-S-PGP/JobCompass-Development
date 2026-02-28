@@ -30,6 +30,8 @@ import AdminDashboard from "../pages/admin/Dashboard"
 import UserManagement from "../pages/admin/UserManagement"
 import JobManagement from "../pages/admin/JobManagement"
 import ATSMonitoring from "../pages/admin/ATSMonitoring"
+import RecruiterJobDetails from "../pages/recruiter/JobDetails"
+import RecruiterEditJob from "../pages/recruiter/EditJob"
 
 export default function AppRoutes() {
   return (
@@ -62,19 +64,25 @@ export default function AppRoutes() {
 
 
       {/* Recruiter */}
-      <Route element={<ProtectedRoute role="recruiter" />}>
-        <Route path="/recruiter" element={<RecruiterLayout />}>
-          <Route path="dashboard" element={<RecruiterDashboard />} />
-          <Route path="profile" element={<RecruiterProfile />} />
-          <Route path="company" element={<Company />} />
-          <Route path="jobs/create" element={<CreateJob />} />
-          <Route path="jobs" element={<RecruiterJobs />} />
-          <Route path="jobs/:jobId/applicants" element={<Applicants />} />
-          <Route path="applicants/:applicationId/profile" element={<ApplicantProfile />} />
-          <Route path="chat" element={<ChatPage />} />
-          <Route path="chat/:conversationId" element={<ChatPage />} />
-        </Route>
-      </Route>
+     <Route element={<ProtectedRoute role="recruiter" />}>
+  <Route path="/recruiter" element={<RecruiterLayout />}>
+
+    <Route path="dashboard" element={<RecruiterDashboard />} />
+    <Route path="profile" element={<RecruiterProfile />} />
+    <Route path="company" element={<Company />} />
+
+    <Route path="jobs" element={<RecruiterJobs />} />
+    <Route path="jobs/create" element={<CreateJob />} />
+    <Route path="jobs/:jobId" element={<RecruiterJobDetails />} />
+    <Route path="jobs/:jobId/edit" element={<RecruiterEditJob />} />
+    <Route path="jobs/:jobId/applicants" element={<Applicants />} />
+
+    <Route path="applicants/:applicationId/profile" element={<ApplicantProfile />} />
+    <Route path="chat" element={<ChatPage />} />
+    <Route path="chat/:conversationId" element={<ChatPage />} />
+
+  </Route>
+</Route>
 
       {/* Admin */}
       <Route element={<ProtectedRoute role="admin" />}>

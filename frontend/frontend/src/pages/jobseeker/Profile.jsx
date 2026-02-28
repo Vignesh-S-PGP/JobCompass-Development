@@ -110,17 +110,6 @@ export default function Profile() {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const handleDeleteAccount = async () => {
-    if (!window.confirm("Are you sure you want to deactivate your account? This action can only be undone by an administrator.")) return;
-    try {
-      await api.delete("/auth/delete-account");
-      localStorage.clear();
-      navigate("/login");
-    } catch (err) {
-      alert("Failed to delete account");
-    }
-  };
-
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-10 animate-in fade-in duration-700">
       
@@ -387,22 +376,7 @@ export default function Profile() {
           </div>
 
           {/* DANGER ZONE */}
-          <div className="bg-red-50 border border-red-100 rounded-[32px] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-               <h3 className="text-red-900 font-black uppercase tracking-widest text-sm flex items-center gap-2">
-                 <Trash2 size={18} /> Danger Zone
-               </h3>
-               <p className="text-red-700/60 text-xs font-bold mt-1">
-                 Deactivating your account will withdraw all active applications and hide your profile.
-               </p>
-            </div>
-            <button
-              onClick={handleDeleteAccount}
-              className="bg-white text-red-600 px-6 py-3 rounded-2xl border-2 border-red-200 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all shadow-sm"
-            >
-              Deactivate Account
-            </button>
-          </div>
+      
         </div>
 
       </div>

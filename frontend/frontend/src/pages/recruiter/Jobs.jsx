@@ -1,114 +1,217 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import api from "../../services/api"
-import { 
-  Plus, 
-  Users, 
-  MapPin, 
-  Briefcase, 
-  ChevronRight,
+import {
+  Plus,
+  Users,
+  MapPin,
+  Briefcase,
   MoreVertical,
   Circle
 } from "lucide-react"
 
 export default function RecruiterJobs() {
   const [jobs, setJobs] = useState([])
+  const [filter, setFilter] = useState("all")
+  const [openMenu, setOpenMenu] = useState(null)
   const navigate = useNavigate()
+  const menuRefs = useRef({})
 
+  /* ---------- FETCH JOBS ---------- */
   useEffect(() => {
-    api.get("/jobs/recruiter")
-      .then(res => {
-        const fixed = res.data.jobs.map(j => ({
-          ...j,
-          jobId: j._id?.$oid || j._id
-        }))
-        setJobs(fixed)
-      })
-      .catch(err => console.error(err))
+    api.get("/jobs/recruiter").then(res => {
+      setJobs(res.data.jobs.map(j => ({ ...j, jobId: j._id })))
+    })
   }, [])
 
+  /* ---------- OUTSIDE CLICK ---------- */
+  useEffect(() => {
+    const handler = e => {
+      if (
+        openMenu &&
+        menuRefs.current[openMenu] &&
+        !menuRefs.current[openMenu].contains(e.target)
+      ) {
+        setOpenMenu(null)
+      }
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [openMenu])
+
+  /* ---------- ACTIONS ---------- */
+  const updateStatus = async (jobId, status) => {
+    await api.patch(`/jobs/${jobId}/status`, { status })
+    setJobs(j =>
+      j.map(x => (x.jobId === jobId ? { ...x, status } : x))
+    )
+    setOpenMenu(null)
+  }
+
+  const deleteJob = async jobId => {
+    if (!window.confirm("Delete this job permanently?")) return
+    await api.delete(`/jobs/${jobId}`)
+    setJobs(j => j.filter(x => x.jobId !== jobId))
+  }
+
+  const filtered = jobs.filter(j =>
+    filter === "all" ? true : j.status === filter
+  )
+
+  /* ---------- UI ---------- */
   return (
-    <div className="min-h-screen bg-white py-8 px-6">
+    <div className="min-h-screen bg-white p-8">
       <div className="max-w-6xl mx-auto">
-        
-        {/* TOP ACTION BAR */}
-        <div className="flex items-center justify-between mb-12 border-b border-slate-100 pb-8">
+
+        {/* HEADER */}
+        <div className="flex justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">My Jobs</h1>
-            <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-widest">
-              {jobs.length} Active Postings
-            </p>
+            <h1 className="text-2xl font-black uppercase">My Jobs</h1>
+            <p className="text-xs text-slate-400">{jobs.length} total</p>
           </div>
-          
+
           <button
             onClick={() => navigate("/recruiter/jobs/create")}
-            className="bg-black text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95"
+            className="bg-black text-white px-5 py-3 rounded-xl text-xs font-black uppercase flex gap-2"
           >
-            <Plus size={16} /> Post New Job
+            <Plus size={14} /> Post Job
           </button>
         </div>
 
-        {/* EMPTY STATE */}
-        {jobs.length === 0 ? (
-          <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-            <p className="text-slate-400 font-medium">No job listings found.</p>
-          </div>
-        ) : (
-          /* JOB GRID */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {jobs.map((job) => (
-              <div
-                key={job.jobId}
-                className="group border border-slate-200 rounded-2xl p-6 hover:border-black transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex justify-between items-start mb-6">
-                    <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-600">
-                      <Circle size={8} fill="currentColor" className="animate-pulse" />
-                      Active
-                    </span>
-                    <button className="text-slate-300 hover:text-slate-900 transition-colors">
-                      <MoreVertical size={18} />
-                    </button>
-                  </div>
+        {/* FILTERS */}
+        <div className="flex gap-2 mb-8">
+          {["all", "active", "paused", "closed"].map(s => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`px-4 py-2 rounded-xl text-xs uppercase font-black ${
+                filter === s ? "bg-black text-white" : "bg-slate-100"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
 
-                  <h2 className="text-lg font-black text-slate-900 leading-snug mb-4 h-12 line-clamp-2 uppercase italic tracking-tighter">
-                    {job.title}
-                  </h2>
-                  
-                  <div className="space-y-2 mb-8">
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      <MapPin size={12} className="text-slate-300" /> {job.location}
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      <Briefcase size={12} className="text-slate-300" /> {job.jobType}
-                    </div>
-                  </div>
-                </div>
+        {/* JOB CARDS */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filtered.map(job => (
+            <div
+              key={job.jobId}
+              className={`border rounded-2xl p-6 relative ${
+                job.status === "closed" && "opacity-75"
+              }`}
+            >
+              {/* STATUS + MENU */}
+              <div className="flex justify-between mb-4">
+                <span className={`text-xs font-black uppercase flex items-center gap-1 ${
+                  job.status === "active"
+                    ? "text-green-600"
+                    : job.status === "paused"
+                    ? "text-amber-600"
+                    : "text-red-600"
+                }`}>
+                  <Circle size={8} fill="currentColor" /> {job.status}
+                </span>
 
-                <div className="space-y-4">
-                  <div className="flex items-end justify-between border-t border-slate-50 pt-4">
-                    <div>
-                       <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Compensation</p>
-                       <p className="font-black text-slate-900 text-sm">₹{job.salaryRange || 'TBD'}</p>
-                    </div>
-                    <p className="text-[9px] font-bold text-slate-300 italic">
-                      {new Date(job.createdAt).toLocaleDateString('en-GB')}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => navigate(`/recruiter/jobs/${job.jobId}/applicants`)}
-                    className="w-full bg-slate-900 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 group-hover:bg-black"
-                  >
-                    Review Applicants <Users size={14} />
+                <div
+                  ref={el => (menuRefs.current[job.jobId] = el)}
+                  className="relative"
+                >
+                  <button onClick={() =>
+                    setOpenMenu(openMenu === job.jobId ? null : job.jobId)
+                  }>
+                    <MoreVertical />
                   </button>
+
+                  {openMenu === job.jobId && (
+                    <div className="absolute right-0 mt-2 w-44 bg-white border rounded-xl shadow-lg z-50">
+                      <MenuBtn onClick={() => navigate(`/recruiter/jobs/${job.jobId}`)}>
+                        View Details
+                      </MenuBtn>
+
+                      {job.status !== "closed" && (
+                        <MenuBtn onClick={() => navigate(`/recruiter/jobs/${job.jobId}/edit`)}>
+                          Edit Job
+                        </MenuBtn>
+                      )}
+
+                      {job.status === "active" && (
+                        <MenuBtn onClick={() => updateStatus(job.jobId, "paused")}>
+                          Pause Job
+                        </MenuBtn>
+                      )}
+
+                      {job.status === "paused" && (
+                        <MenuBtn onClick={() => updateStatus(job.jobId, "active")}>
+                          Activate Job
+                        </MenuBtn>
+                      )}
+
+                      {job.status !== "closed" && (
+                        <MenuBtn
+                          onClick={() => updateStatus(job.jobId, "closed")}
+                          className="text-red-600"
+                        >
+                          Close Job
+                        </MenuBtn>
+                      )}
+
+                      <MenuBtn
+                        onClick={() => deleteJob(job.jobId)}
+                        className="text-red-600"
+                      >
+                        Delete Job
+                      </MenuBtn>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* BODY */}
+              <h2 className="font-black uppercase italic mb-3 line-clamp-2">
+                {job.title}
+              </h2>
+
+              <div className="text-sm text-slate-400 mb-6 space-y-1">
+                <div className="flex gap-2 items-center">
+                  <MapPin size={12} /> {job.location}
+                </div>
+                <div className="flex gap-2 items-center">
+                  <Briefcase size={12} /> {job.jobType}
+                </div>
+              </div>
+
+              {/* FOOTER */}
+              {job.status !== "closed" && (
+                <button
+                  onClick={() =>
+                    navigate(`/recruiter/jobs/${job.jobId}/applicants`)
+                  }
+                  className="w-full bg-black text-white py-3 rounded-xl text-xs font-black uppercase"
+                >
+                  Review Applicants <Users size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
+  )
+}
+
+/* ---------- MENU BUTTON ---------- */
+function MenuBtn({ children, onClick, className = "" }) {
+  return (
+    <button
+      onClick={e => {
+        e.stopPropagation()
+        onClick()
+      }}
+      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${className}`}
+    >
+      {children}
+    </button>
   )
 }
