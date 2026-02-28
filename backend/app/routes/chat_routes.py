@@ -159,3 +159,47 @@ def send_message(cid):
 
     socketio.emit("new_message", payload, room=str(convo_oid))
     return payload, 201
+
+@chat_bp.route("/start", methods=["POST"])
+@jwt_required()
+def start_chat():
+    data = request.get_json() or {}
+    application_id = data.get("applicationId")
+
+    if not application_id:
+        return {"error": "applicationId required"}, 400
+
+    user_id = ObjectId(get_jwt_identity())
+
+    # 🔹 Fetch application
+    application = mongo.db.applications.find_one({
+        "_id": ObjectId(application_id)
+    })
+
+    if not application:
+        return {"error": "Application not found"}, 404
+
+    applicant_id = application["userId"]
+
+    # 🔹 Check existing conversation
+    existing = mongo.db.conversations.find_one({
+        "participants": {"$all": [user_id, applicant_id]}
+    })
+
+    if existing:
+        return {
+            "conversationId": str(existing["_id"])
+        }, 200
+
+    # 🔹 Create new conversation
+    conversation = {
+        "participants": [user_id, applicant_id],
+        "createdAt": datetime.utcnow(),
+        "updatedAt": datetime.utcnow()
+    }
+
+    result = mongo.db.conversations.insert_one(conversation)
+
+    return {
+        "conversationId": str(result.inserted_id)
+    }, 201

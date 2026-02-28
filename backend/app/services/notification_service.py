@@ -4,7 +4,8 @@ from bson import ObjectId
 from app.extensions.socket import socketio
 
 def create_notification(user_id, title, message, type, meta=None):
-    notif = {
+    # 1️⃣ Build DB-safe notification
+    notif_db = {
         "userId": ObjectId(user_id),
         "title": title,
         "message": message,
@@ -14,23 +15,26 @@ def create_notification(user_id, title, message, type, meta=None):
         "createdAt": datetime.utcnow()
     }
 
+    # 2️⃣ Insert ONCE
+    result = mongo.db.notifications.insert_one(notif_db)
 
-    mongo.db.notifications.insert_one(notif)
+    # 3️⃣ Build socket / API payload (SEPARATE OBJECT)
+    notif_payload = {
+        "_id": str(result.inserted_id),
+        "userId": str(user_id),
+        "title": title,
+        "message": message,
+        "type": type,
+        "meta": meta or {},
+        "isRead": False,
+        "createdAt": notif_db["createdAt"].isoformat()
+    }
 
-    # Emit via Socket.IO
-    from app.extensions.socket import socketio
-    notif["_id"] = str(notif["_id"])
-    notif["userId"] = str(notif["userId"])
-    notif["createdAt"] = notif["createdAt"].isoformat()
+    # 4️⃣ Emit realtime event
+    socketio.emit(
+        "new_notification",
+        notif_payload,
+        room=str(user_id)
+    )
 
-    socketio.emit("notification", notif, room=str(user_id))
-
-    result = mongo.db.notifications.insert_one(notif)
-
-    # Emit real-time notification
-    notif["_id"] = str(result.inserted_id)
-    notif["userId"] = str(notif["userId"])
-    notif["createdAt"] = notif["createdAt"].isoformat()
-
-    socketio.emit("new_notification", notif, room=str(user_id))
-
+    return notif_payload

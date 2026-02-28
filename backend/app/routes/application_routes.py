@@ -172,7 +172,11 @@ def get_applicants(job_id):
             "atsScore": a.get("atsScore", 0),
             "ats": a.get("ats", {}),
             "user": user,
-            "resume": resume
+            "resume": {
+    "_id": str(resume["_id"]),
+    "filename": resume.get("filename"),
+    "title": resume.get("title")
+} if resume else None
         })
 
     return {"applications": result}, 200
@@ -319,41 +323,33 @@ def get_application_detail(application_id):
 @application_bp.route("/<application_id>/status", methods=["PATCH"])
 @jwt_required()
 def update_application_status(application_id):
-    data = request.json
+    data = request.get_json(silent=True) or {}
     status = data.get("status")
 
     if status not in ["shortlisted", "rejected"]:
         return {"error": "Invalid status"}, 400
 
-    # 🔹 Fetch application FIRST
     application = mongo.db.applications.find_one({
         "_id": ObjectId(application_id)
     })
-
     if not application:
         return {"error": "Application not found"}, 404
 
     recruiter_id = get_jwt_identity()
     claims = get_jwt()
-    job = mongo.db.jobs.find_one({"_id": application.get("jobId")})
+
+    job = mongo.db.jobs.find_one({"_id": application["jobId"]})
     if not job:
         return {"error": "Job not found"}, 404
 
     if claims.get("role") != "admin" and job.get("createdBy") != ObjectId(recruiter_id):
         return {"error": "Forbidden"}, 403
 
-    # 🔹 Update status
     mongo.db.applications.update_one(
         {"_id": ObjectId(application_id)},
-        {
-            "$set": {
-                "status": status,
-                "updatedAt": datetime.utcnow()
-            }
-        }
+        {"$set": {"status": status, "updatedAt": datetime.utcnow()}}
     )
 
-    # 🔔 Create notification
     create_notification(
         user_id=str(application["userId"]),
         title="Application Status Updated",
