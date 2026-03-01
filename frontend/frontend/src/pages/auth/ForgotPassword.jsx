@@ -1,6 +1,10 @@
 import { useState } from "react"
 import api from "../../services/api"
 import { Link } from "react-router-dom"
+import AuthLayout from "./AuthLayout"
+import { Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react"
+import Input from "../../components/ui/Input"
+import Button from "../../components/ui/Button"
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("")
@@ -24,40 +28,59 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-2 text-center">Forgot Password</h1>
-        <p className="text-gray-500 text-center mb-8">Enter your email and we'll send you a link to reset your password.</p>
-
-        {message && <div className="bg-green-50 text-green-600 p-4 rounded-lg mb-6 text-center font-medium">{message}</div>}
-        {error && <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-center font-medium">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input
-              type="email"
-              placeholder="name@company.com"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg disabled:opacity-50 transition-colors"
-          >
-            {loading ? "Sending..." : "Send Reset Link"}
-          </button>
-        </form>
-
-        <div className="mt-8 text-center">
-          <Link to="/login" className="text-indigo-600 hover:underline font-medium">Back to Login</Link>
+    <AuthLayout
+      title="Lost access?"
+      subtitle="Recover your JobCompass account."
+    >
+      {message && (
+        <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-4 rounded-xl mb-6 text-sm font-bold flex items-center gap-3 animate-in slide-up">
+          <CheckCircle size={18} />
+          {message}
         </div>
+      )}
+      {error && (
+        <div className="bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-xl mb-6 text-sm font-bold flex items-center gap-3 animate-in slide-up">
+          <AlertCircle size={18} />
+          {error}
+        </div>
+      )}
+
+      {!message ? (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Input
+            label="Email address"
+            type="email"
+            placeholder="name@company.com"
+            icon={Mail}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <Button
+            type="submit"
+            loading={loading}
+            className="w-full py-4 text-xs uppercase tracking-widest font-black"
+          >
+            Send Reset Link
+          </Button>
+        </form>
+      ) : (
+        <div className="text-center py-4">
+           <p className="text-slate-500 font-medium mb-8">
+             Check your inbox for further instructions. If you don't see it, please check your spam folder.
+           </p>
+           <Button variant="outline" onClick={() => setMessage("")} className="w-full">
+             Try another email
+           </Button>
+        </div>
+      )}
+
+      <div className="mt-10 text-center">
+        <Link to="/login" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-primary-600 transition-colors">
+          <ArrowLeft size={14} /> Back to Login
+        </Link>
       </div>
-    </div>
+    </AuthLayout>
   )
 }

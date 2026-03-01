@@ -7,13 +7,18 @@ import {
   Briefcase,
   Star,
   Clock,
-  Banknote,
   Search,
   Filter,
-  X,
-  ChevronDown,
-  Zap
+  Zap,
+  TrendingUp,
+  Cpu
 } from "lucide-react";
+import { ListSkeleton } from "../../components/ui/Skeleton";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import Badge from "../../components/ui/Badge";
+import Input from "../../components/ui/Input";
+import EmptyState from "../../components/ui/EmptyState";
 
 export default function Jobs() {
   const [recommended, setRecommended] = useState([]);
@@ -40,7 +45,8 @@ export default function Jobs() {
       setAllJobs(feedRes.data.all || []);
       setFilteredJobs(feedRes.data.all || []);
       setProfile(profileRes.data.profile);
-    }).finally(() => setLoading(false));
+    }).catch(err => console.error("Failed to fetch jobs", err))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -77,132 +83,136 @@ export default function Jobs() {
     const matched = getMatchedSkills(job.skillsRequired || []);
 
     return (
-      <div
+      <Card
+        hover
         onClick={() => setSelectedJob(job)}
-        className="group relative bg-white border border-slate-200 rounded-[32px] mb-4 p-8 cursor-pointer
-          hover:border-indigo-500 hover:shadow-2xl hover:shadow-indigo-100/40 transition-all duration-500"
+        className="mb-4 p-6 md:p-8 cursor-pointer group"
       >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           
           {/* Left: Branding & Identity */}
           <div className="flex flex-1 items-center gap-6">
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 p-2 flex-shrink-0 flex items-center justify-center group-hover:bg-white transition-colors">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 p-2 flex-shrink-0 flex items-center justify-center group-hover:border-primary-200 transition-colors">
               {job.company?.logo ? (
-                <img src={job.company.logo} alt="logo" className="max-h-full max-w-full object-contain" />
+                <img src={job.company.logo} alt="logo" className="max-h-full max-w-full object-contain p-1" />
               ) : (
-                <span className="font-black text-slate-300 text-2xl">{job.company?.name?.[0]}</span>
+                <Briefcase className="text-slate-200" size={24} />
               )}
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-3">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   {job.company?.name}
                 </span>
                 {priority && (
-                  <div className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[8px] font-black uppercase flex items-center gap-1">
+                  <Badge variant="primary" className="flex items-center gap-1">
                     <Star size={8} fill="currentColor" /> Best Match
-                  </div>
+                  </Badge>
                 )}
               </div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">
+              <h3 className="text-xl font-black text-slate-900 tracking-tight group-hover:text-primary-600 transition-colors">
                 {job.title}
               </h3>
-              <div className="flex flex-wrap gap-1.5 mt-2">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {matched.slice(0, 3).map(s => (
-                  <span key={s} className="bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-md">
+                  <span key={s} className="bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase px-2.5 py-1 rounded-lg border border-emerald-100">
                     {s}
                   </span>
                 ))}
                 {job.skillsRequired?.length > matched.length && (
-                   <span className="text-[8px] font-black text-slate-300 uppercase px-2 py-0.5">+{job.skillsRequired.length - matched.length} More</span>
+                   <span className="text-[9px] font-black text-slate-400 uppercase px-2.5 py-1">+{job.skillsRequired.length - matched.length} Skills</span>
                 )}
               </div>
             </div>
           </div>
 
           {/* Center: Essential Data */}
-          <div className="flex flex-wrap items-center gap-6 lg:gap-12">
-            <div className="min-w-[100px]">
-              <div className="flex items-center gap-1.5 mb-1 text-slate-400">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 lg:gap-12 shrink-0">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5 text-slate-400">
                 <MapPin size={12} />
-                <p className="text-[8px] font-black uppercase tracking-widest">Location</p>
+                <p className="text-[9px] font-black uppercase tracking-widest">Location</p>
               </div>
-              <p className="text-xs font-black text-slate-700">{job.location}</p>
+              <p className="text-sm font-bold text-slate-900">{job.location}</p>
             </div>
-            <div className="min-w-[100px]">
-              <div className="flex items-center gap-1.5 mb-1 text-slate-400">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5 text-slate-400">
                 <Clock size={12} />
-                <p className="text-[8px] font-black uppercase tracking-widest">Job Type</p>
+                <p className="text-[9px] font-black uppercase tracking-widest">Contract</p>
               </div>
-              <p className="text-xs font-black text-slate-900">{job.jobType}</p>
+              <p className="text-sm font-bold text-slate-900">{job.jobType}</p>
             </div>
-            <div className="min-w-[100px]">
-              <div className="flex items-center gap-1.5 mb-1 text-slate-400">
-                <Briefcase size={12} />
-                <p className="text-[8px] font-black uppercase tracking-widest">Experience</p>
+            <div className="hidden md:block">
+              <div className="flex items-center gap-1.5 mb-1.5 text-slate-400">
+                <TrendingUp size={12} />
+                <p className="text-[9px] font-black uppercase tracking-widest">Experience</p>
               </div>
-              <p className="text-xs font-black text-slate-700">{job.experience}+ Yrs</p>
+              <p className="text-sm font-bold text-slate-900">{job.experience}+ Yrs</p>
             </div>
           </div>
 
           {/* Right: Action */}
-          <div className="flex items-center justify-end">
-               <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white group-hover:rotate-[-10deg] transition-all duration-300 shadow-sm">
+          <div className="flex items-center justify-end lg:pl-6">
+               <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-primary-600 group-hover:text-white transition-all duration-300 shadow-sm border border-slate-100 group-hover:border-primary-500">
                  <ArrowRight size={20} />
                </div>
           </div>
         </div>
-      </div>
+      </Card>
     );
   };
 
+  if (loading) return <ListSkeleton />;
   if (selectedJob) return <JobDetails job={selectedJob} onBack={() => setSelectedJob(null)} />;
 
   return (
-    <div className="max-w-7xl mx-auto pb-20 pt-6 px-4 animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto pb-20 animate-in fade-in duration-700">
       
       {/* HEADER SECTION */}
-      <div className="mb-12 border-b border-slate-100 pb-10">
-        <h1 className="text-7xl font-black text-slate-900 tracking-tighter mb-4">
-          Market.
-        </h1>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <p className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">
-            {filteredJobs.length} Opportunities Indexed
-          </p>
+      <div className="mb-12">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div>
+            <Badge variant="primary" className="mb-4">Live Registry</Badge>
+            <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase leading-none">
+              Market <span className="text-primary-600">Feed</span>.
+            </h1>
+            <p className="text-slate-500 font-medium text-lg mt-4 max-w-xl">
+              Discover opportunities indexed from top-tier organizations within the JobCompass ecosystem.
+            </p>
+          </div>
 
-          <div className="flex items-center bg-white border border-slate-200 p-2 rounded-2xl w-full max-w-md shadow-sm">
-            <Search className="ml-3 text-slate-400" size={18} />
-            <input
+          <div className="w-full lg:max-w-md">
+            <Input
+              icon={Search}
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search roles or companies..."
-              className="flex-1 bg-transparent border-none px-4 py-2 text-sm font-bold outline-none"
+              placeholder="Search by role, company, or keywords..."
+              className="py-4 shadow-xl shadow-slate-200/50"
             />
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-10">
+      <div className="flex flex-col lg:flex-row gap-12">
 
         {/* Sidebar Filters */}
-        <aside className="lg:w-72 space-y-8">
-           <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-2 mb-8">
-                <Filter size={16} className="text-indigo-600" />
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Refine Search</h3>
+        <aside className="lg:w-80 shrink-0">
+           <Card className="p-8 sticky top-8">
+              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
+                <Filter size={18} className="text-primary-600" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Refine Search</h3>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
-                  <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">Location</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">Target Location</label>
                   <select
                     value={filters.location}
                     onChange={e => setFilters({...filters, location: e.target.value})}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none cursor-pointer hover:border-primary-200 transition-colors"
                   >
-                    <option value="">Anywhere</option>
+                    <option value="">Global (Anywhere)</option>
                     <option value="Remote">Remote</option>
                     <option value="New York">New York</option>
                     <option value="San Francisco">San Francisco</option>
@@ -211,14 +221,16 @@ export default function Jobs() {
                 </div>
 
                 <div>
-                  <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">Contract Type</label>
-                  <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">Employment Model</label>
+                  <div className="grid grid-cols-1 gap-2">
                     {["Full-time", "Part-time", "Contract"].map(type => (
                       <button
                         key={type}
                         onClick={() => setFilters({...filters, jobType: filters.jobType === type ? "" : type})}
-                        className={`w-full text-left px-4 py-2 rounded-lg text-xs font-black transition-all ${
-                          filters.jobType === type ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                        className={`text-left px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                          filters.jobType === type
+                            ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20'
+                            : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100'
                         }`}
                       >
                         {type}
@@ -228,44 +240,51 @@ export default function Jobs() {
                 </div>
 
                 <div>
-                  <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">Max Experience</label>
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Experience</label>
+                    <span className="text-[10px] font-black text-primary-600 uppercase tracking-widest">{filters.experience || 15}+ Yrs</span>
+                  </div>
                   <input
                     type="range"
                     min="0" max="15"
                     value={filters.experience || 15}
                     onChange={e => setFilters({...filters, experience: e.target.value})}
-                    className="w-full accent-indigo-600 mb-2"
+                    className="w-full accent-primary-600 mb-2 cursor-pointer"
                   />
-                  <div className="flex justify-between text-[10px] font-black text-slate-400">
-                    <span>0 yrs</span>
-                    <span>{filters.experience || 15}+ yrs</span>
+                  <div className="flex justify-between text-[10px] font-black text-slate-300 uppercase">
+                    <span>Entry</span>
+                    <span>Executive</span>
                   </div>
                 </div>
 
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => setFilters({location: "", jobType: "", experience: ""})}
-                  className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                  className="w-full text-rose-500 hover:bg-rose-50 hover:text-rose-600 py-3 text-[10px] font-black uppercase tracking-widest"
                 >
-                  Reset All
-                </button>
+                  Clear Parameters
+                </Button>
               </div>
-           </div>
+           </Card>
 
-           <div className="bg-indigo-600 p-8 rounded-[32px] text-white">
-              <Zap size={32} className="mb-4 text-indigo-200" />
-              <h4 className="text-xl font-black tracking-tight leading-tight mb-2">Get Instant Match Notifications</h4>
-              <p className="text-[10px] font-bold text-indigo-100 opacity-80 mb-6">We'll alert you the second a job matches your skills.</p>
-              <button className="w-full py-3 bg-white text-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest">Enable Alerts</button>
+           <div className="mt-8 bg-slate-900 p-8 rounded-[2.5rem] text-white relative overflow-hidden group">
+              <div className="relative z-10">
+                <Cpu size={32} className="mb-6 text-primary-500" />
+                <h4 className="text-xl font-black tracking-tight leading-tight mb-3 uppercase">AI Talent Matching</h4>
+                <p className="text-xs font-medium text-slate-400 mb-8 leading-relaxed">Enable system intelligence to receive real-time alerts for roles that align with your verified skillset.</p>
+                <Button className="w-full bg-white text-slate-900 hover:bg-primary-500 hover:text-white border-none py-3 text-[10px] font-black uppercase tracking-widest">Activate Alerts</Button>
+              </div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary-600/10 rounded-full blur-2xl -mr-16 -mt-16" />
            </div>
         </aside>
 
         {/* Job Listings */}
-        <div className="flex-1">
+        <div className="flex-1 space-y-12">
           {recommended.length > 0 && !search && !filters.location && !filters.jobType && (
-            <section className="mb-12">
+            <section>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900">Recommended for You</h2>
+                <div className="w-2.5 h-2.5 rounded-full bg-primary-600 shadow-[0_0_12px_rgba(99,121,247,0.5)] animate-pulse" />
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900">Priority Matches</h2>
               </div>
               <div>
                 {recommended.slice(0, 3).map(job => (
@@ -276,19 +295,22 @@ export default function Jobs() {
           )}
 
           <section>
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8 border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-slate-300" />
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">All Listings</h2>
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Registry Feed</h2>
               </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Showing {filteredJobs.length} results</p>
             </div>
 
             {filteredJobs.length === 0 ? (
-              <div className="py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-slate-100">
-                 <p className="text-sm font-black text-slate-300 uppercase tracking-widest">No matching roles found</p>
-              </div>
+              <EmptyState
+                title="No Roles Indexed"
+                description="Your current search parameters don't match any indexed roles. Try broadening your criteria."
+                actionLabel="View All Jobs"
+                onAction={() => setFilters({location: "", jobType: "", experience: ""})}
+              />
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {filteredJobs.map(job => (
                   <JobRow key={job._id} job={job} priority={false} />
                 ))}
