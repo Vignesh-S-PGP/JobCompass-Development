@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import {
-  Briefcase,
   CheckCircle,
   Clock,
   XCircle,
-  TrendingUp,
   ArrowRight,
   Zap,
-  Star
+  Star,
+  Search,
+  Users,
+  Briefcase
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { DashboardSkeleton } from "../../components/ui/Skeleton";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import Badge from "../../components/ui/Badge";
 
 export default function JobSeekerDashboard() {
   const [stats, setStats] = useState({
@@ -49,135 +54,143 @@ export default function JobSeekerDashboard() {
     fetchData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="animate-pulse space-y-8">
-        <div className="h-32 bg-slate-200 rounded-3xl w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map(i => <div key={i} className="h-24 bg-slate-200 rounded-2xl" />)}
-        </div>
-        <div className="h-64 bg-slate-200 rounded-3xl w-full" />
-      </div>
-    );
-  }
+  if (loading) return <DashboardSkeleton />;
 
   const statCards = [
-    { label: "Total Applied", value: stats.applied, icon: <Clock className="text-blue-500" />, bg: "bg-blue-50" },
-    { label: "Shortlisted", value: stats.shortlisted, icon: <CheckCircle className="text-emerald-500" />, bg: "bg-emerald-50" },
-    { label: "Rejected", value: stats.rejected, icon: <XCircle className="text-rose-500" />, bg: "bg-rose-50" },
+    { label: "Applications", value: stats.applied, icon: Briefcase, color: "text-primary-600", bg: "bg-primary-50", border: "border-primary-100" },
+    { label: "Shortlisted", value: stats.shortlisted, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+    { label: "Rejected", value: stats.rejected, icon: XCircle, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100" },
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-10">
+    <div className="max-w-7xl mx-auto space-y-12 pb-20 animate-in fade-in duration-700">
 
-      {/* GREETING */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[40px] p-10 text-white shadow-2xl">
-         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-               <h1 className="text-4xl font-black tracking-tight mb-2">
-                 Hello, {profile?.fullName?.split(" ")[0] || "Explorer"}! 👋
+      {/* GREETING HERO */}
+      <div className="relative overflow-hidden bg-slate-950 rounded-[3rem] p-10 md:p-16 text-white shadow-2xl">
+         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+            <div className="max-w-2xl">
+               <Badge variant="primary" className="mb-6 bg-primary-500/10 text-primary-400 border-primary-500/20 px-4 py-1">System Active</Badge>
+               <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6 leading-[1.1]">
+                 Welcome back, <span className="text-primary-500">{profile?.fullName?.split(" ")[0] || "Explorer"}</span>.
                </h1>
-               <p className="text-slate-400 font-medium text-lg">
-                 You have <span className="text-indigo-400 font-bold">{stats.shortlisted} active interview requests</span> this week.
+               <p className="text-slate-400 font-medium text-lg md:text-xl leading-relaxed">
+                 Your career trajectory is looking promising. You have <span className="text-white font-bold">{stats.shortlisted} active interview requests</span> waiting for your response.
                </p>
             </div>
-            <Link
-              to="/jobseeker/jobs"
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all self-start md:self-auto shadow-xl shadow-indigo-900/40"
-            >
-              Explore Jobs <ArrowRight size={20} />
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 shrink-0">
+               <Link to="/jobseeker/jobs">
+                 <Button size="lg" className="w-full sm:w-auto px-10 py-5 rounded-2xl text-xs uppercase tracking-[0.2em]">
+                   Explore Registry <ArrowRight size={18} className="ml-2" />
+                 </Button>
+               </Link>
+            </div>
          </div>
          {/* Decorative elements */}
-         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -mr-20 -mt-20" />
-         <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl -ml-10 -mb-10" />
+         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-600/10 rounded-full blur-[120px] -mr-64 -mt-64" />
+         <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-900/10 rounded-full blur-[100px] -ml-48 -mb-48" />
       </div>
 
       {/* STATS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {statCards.map((s) => (
-          <div key={s.label} className={`${s.bg} p-6 rounded-3xl border border-white/50 flex items-center gap-5 shadow-sm`}>
-            <div className="bg-white p-3 rounded-2xl shadow-sm">
-              {s.icon}
+          <Card key={s.label} className={`p-8 flex items-center gap-6 border-l-4 ${s.border.replace('border-', 'border-l-')}`}>
+            <div className={`${s.bg} p-4 rounded-2xl`}>
+              <s.icon className={s.color} size={28} />
             </div>
             <div>
-              <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">{s.label}</p>
-              <p className="text-3xl font-black text-slate-900">{s.value}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{s.label}</p>
+              <p className="text-4xl font-black text-slate-900 leading-none">{s.value}</p>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
         {/* RECOMMENDED JOBS */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-8">
            <div className="flex items-center justify-between px-2">
-              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                <Star className="text-amber-500 fill-amber-500" size={20} /> Matches For You
-              </h2>
-              <Link to="/jobseeker/jobs" className="text-sm font-bold text-indigo-600 hover:underline">View All</Link>
+              <div className="flex flex-col">
+                 <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
+                   <Star className="text-primary-500 fill-primary-500" size={24} /> AI Recommendations
+                 </h2>
+                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Matched based on your skill profile</p>
+              </div>
+              <Link to="/jobseeker/jobs">
+                <Button variant="ghost" size="sm" className="text-xs uppercase tracking-widest font-black">View All Registry</Button>
+              </Link>
            </div>
 
            <div className="space-y-4">
              {recommendedJobs.length > 0 ? recommendedJobs.map(job => (
-               <div key={job._id} className="group bg-white border border-slate-100 p-6 rounded-[32px] hover:border-indigo-600 transition-all shadow-sm hover:shadow-xl hover:shadow-indigo-900/5">
-                 <div className="flex items-start justify-between">
-                    <div className="flex gap-5">
-                       <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden">
-                          {job.company?.logo ? <img src={job.company.logo} className="w-full h-full object-cover" /> : <Briefcase className="text-slate-300" />}
+               <Card key={job._id} hover className="p-8 group">
+                 <div className="flex flex-col md:flex-row items-start justify-between gap-6">
+                    <div className="flex gap-6">
+                       <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden shrink-0 group-hover:border-primary-200 transition-colors">
+                          {job.company?.logo ? <img src={job.company.logo} alt="Logo" className="w-full h-full object-contain p-2" /> : <Briefcase className="text-slate-300" />}
                        </div>
                        <div>
-                          <h3 className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{job.title}</h3>
-                          <p className="text-sm font-bold text-slate-400 mt-0.5">{job.company?.name} • {job.location}</p>
-                          <div className="flex gap-2 mt-3">
-                             {job.skillsRequired?.slice(0, 3).map(skill => (
-                               <span key={skill} className="px-3 py-1 bg-slate-50 text-[10px] font-black uppercase text-slate-500 rounded-lg">{skill}</span>
+                          <Badge variant="primary" className="mb-2">Recommended</Badge>
+                          <h3 className="text-xl font-black text-slate-900 group-hover:text-primary-600 transition-colors leading-tight mb-1">{job.title}</h3>
+                          <p className="text-sm font-bold text-slate-500 flex items-center gap-2">
+                            {job.company?.name} <span className="text-slate-300">•</span> {job.location}
+                          </p>
+                          <div className="flex flex-wrap gap-2 mt-4">
+                             {job.skillsRequired?.slice(0, 4).map(skill => (
+                               <span key={skill} className="px-3 py-1 bg-slate-100 text-[10px] font-black uppercase text-slate-500 rounded-lg group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">{skill}</span>
                              ))}
                           </div>
                        </div>
                     </div>
-                    <Link to="/jobseeker/jobs" className="p-2 bg-slate-50 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                       <ArrowRight size={20} />
+                    <Link to="/jobseeker/jobs" className="self-end md:self-center">
+                       <Button variant="outline" size="sm" className="rounded-xl px-4 py-3 group-hover:bg-primary-600 group-hover:text-white transition-all group-hover:border-primary-600">
+                          <ArrowRight size={20} />
+                       </Button>
                     </Link>
                  </div>
-               </div>
+               </Card>
              )) : (
-               <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-[32px]">
-                  <p className="text-slate-400 font-bold">No matches found yet. Keep your profile updated!</p>
+               <div className="py-20 text-center border-4 border-dashed border-slate-100 rounded-[3rem]">
+                  <Search size={48} className="mx-auto text-slate-200 mb-4" />
+                  <p className="text-slate-400 font-black uppercase tracking-widest text-sm">No matches found yet</p>
+                  <p className="text-slate-500 text-sm mt-2 font-medium">Keep your profile updated for better alignment.</p>
                </div>
              )}
            </div>
         </div>
 
         {/* SIDEBAR */}
-        <div className="lg:col-span-4 space-y-8">
+        <div className="lg:col-span-4 space-y-10">
            {/* PROFILE COMPLETION */}
-           <div className="bg-white border border-slate-100 p-8 rounded-[32px] shadow-sm">
-              <h3 className="font-black text-slate-900 text-sm uppercase tracking-widest mb-6">Profile Strength</h3>
-              <div className="relative w-32 h-32 mx-auto mb-6">
-                 {/* Simple Circular Progress Mockup */}
-                 <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <path className="text-slate-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path className="text-indigo-600" strokeWidth="3" strokeDasharray="75, 100" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+           <Card className="p-10 text-center">
+              <h3 className="font-black text-slate-900 text-[10px] uppercase tracking-[0.3em] mb-8">Intelligence Score</h3>
+              <div className="relative w-40 h-40 mx-auto mb-8">
+                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="16" fill="none" className="stroke-slate-100" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="16" fill="none" className="stroke-primary-600" strokeWidth="3" strokeDasharray="75, 100" strokeLinecap="round" />
                  </svg>
-                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-black text-slate-900">75%</span>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-4xl font-black text-slate-900">75%</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Match Rate</span>
                  </div>
               </div>
-              <p className="text-xs text-slate-500 font-medium text-center mb-6">Complete your bio and add more skills to reach 100%.</p>
-              <Link to="/jobseeker/profile" className="w-full block text-center py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-600 transition-colors">
-                 Complete Profile
+              <p className="text-sm text-slate-500 font-medium mb-8 leading-relaxed">Your professional narrative is strong. Adding <span className="text-slate-900 font-bold">2 more skills</span> will optimize your visibility.</p>
+              <Link to="/jobseeker/profile" className="block">
+                 <Button className="w-full py-4 text-[10px] uppercase tracking-[0.2em] font-black">Refine Profile</Button>
               </Link>
-           </div>
+           </Card>
 
-           {/* TIP OF THE DAY */}
-           <div className="bg-indigo-50 p-8 rounded-[32px] border border-indigo-100">
-              <Zap className="text-indigo-600 mb-4" size={24} />
-              <h3 className="font-bold text-indigo-900 mb-2">Pro Tip</h3>
-              <p className="text-sm text-indigo-700/70 font-medium leading-relaxed">
-                Candidates who include a detailed professional summary are 40% more likely to be noticed by recruiters.
-              </p>
+           {/* ANALYTICS PREVIEW */}
+           <div className="bg-primary-950 p-10 rounded-[3rem] border border-white/5 relative overflow-hidden group">
+              <div className="relative z-10">
+                <Zap className="text-primary-500 mb-6 group-hover:scale-110 transition-transform" size={32} />
+                <h3 className="font-black text-white text-lg mb-3 uppercase tracking-tight">Recruiter Insights</h3>
+                <p className="text-sm text-slate-400 font-medium leading-relaxed mb-6">
+                  Candidates with <span className="text-white font-bold">detailed experience descriptions</span> see a 40% increase in direct recruiter outreach.
+                </p>
+                <div className="h-1 w-12 bg-primary-600 rounded-full" />
+              </div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
            </div>
         </div>
 

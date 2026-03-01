@@ -10,23 +10,38 @@ import {
   FilePlus, 
   ShieldCheck,
   AlertCircle,
-  Calendar
+  Calendar,
+  Sparkles,
+  ChevronRight,
+  Info,
+  Layers,
+  Search
 } from "lucide-react";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import Badge from "../../components/ui/Badge";
+import Input from "../../components/ui/Input";
+import EmptyState from "../../components/ui/EmptyState";
+import { ListSkeleton } from "../../components/ui/Skeleton";
 
 export default function Resumes() {
   const [file, setFile] = useState(null);
   const [title, setTitle] = useState("");
   const [resumes, setResumes] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [previewId, setPreviewId] = useState(null);
 
   const fetchResumes = async () => {
     try {
+      setLoading(true);
       const res = await getResumes();
       setResumes(res.data.resumes || []);
     } catch {
       setError("System failed to synchronize resume records.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,7 +54,7 @@ export default function Resumes() {
       setError("No document selected for deployment.");
       return;
     }
-    setLoading(true);
+    setUploading(true);
     setError("");
     try {
       await uploadResume(file, title);
@@ -49,7 +64,7 @@ export default function Resumes() {
     } catch (err) {
       setError(err.response?.data?.error || "Archive upload failed.");
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -63,144 +78,189 @@ export default function Resumes() {
     }
   };
 
+  if (loading && resumes.length === 0) return <ListSkeleton />;
+
   return (
-    <div className="max-w-7xl mx-auto pb-20 pt-6 px-4 animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto space-y-12 pb-20 animate-in fade-in duration-700">
       
       {/* HEADER SECTION */}
-      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 pb-10 border-b border-slate-100">
         <div>
-          <h1 className="text-6xl font-black text-slate-900 tracking-tighter">Resumes.</h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mt-2">
-            AI-Ready Document Repository
-          </p>
+           <Badge variant="primary" className="mb-4">Secure Storage</Badge>
+           <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase leading-none">
+             Asset <span className="text-primary-600">Vault</span>.
+           </h1>
+           <p className="text-slate-500 font-medium text-lg mt-4 max-w-xl">
+             Manage your professional credentials and resume profiles within the secure ecosystem vault.
+           </p>
         </div>
 
-        <div className="bg-white border-2 border-slate-100 p-4 rounded-2xl min-w-[150px] shadow-sm flex items-center gap-4">
-          <div className="bg-indigo-50 p-2 rounded-xl text-indigo-600">
-             <FileText size={24} />
-          </div>
-          <div>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Archived</p>
-            <p className="text-3xl font-black text-slate-900 leading-none">{resumes.length}</p>
-          </div>
+        <div className="flex items-center gap-4 bg-slate-950 text-white px-8 py-4 rounded-3xl shadow-xl shadow-slate-200/50 self-start md:self-auto group">
+           <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Vault Records</span>
+              <span className="text-3xl font-black leading-none mt-1 group-hover:text-primary-500 transition-colors">{resumes.length}</span>
+           </div>
+           <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/5">
+              <FileText size={20} className="text-primary-500" />
+           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         
-        {/* LEFT: UPLOAD TERMINAL (4 Cols) */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white border-2 border-slate-900 rounded-[32px] p-8 shadow-[12px_12px_0px_0px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center gap-3 mb-6">
-              <FilePlus size={18} className="text-indigo-600" />
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900">New Deployment</h3>
-            </div>
-
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600">
-                <AlertCircle size={16} />
-                <p className="text-[10px] font-black uppercase">{error}</p>
+        {/* LEFT: UPLOAD TERMINAL */}
+        <div className="lg:col-span-4 space-y-10">
+          <Card className="p-10 border-2 border-slate-900 shadow-2xl relative overflow-hidden group">
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-10">
+                <FilePlus size={24} className="text-primary-600" />
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900">Vault Upload</h3>
               </div>
-            )}
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Document Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Senior Dev Lead"
+              {error && (
+                <div className="mb-8 p-5 bg-rose-50 border border-rose-100 rounded-[1.5rem] flex items-center gap-4 text-rose-600 animate-in slide-up">
+                  <AlertCircle size={20} className="shrink-0" />
+                  <p className="text-[10px] font-black uppercase leading-relaxed">{error}</p>
+                </div>
+              )}
+
+              <div className="space-y-8">
+                <Input
+                  label="Document Designation"
+                  placeholder="e.g. Senior Systems Lead 2024"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100"
+                  icon={Briefcase}
+                  className="py-4"
                 />
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">PDF Module</label>
-                <div className="relative group">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setFile(e.target.files[0])}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  />
-                  <div className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all ${file ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-200 group-hover:border-slate-400'}`}>
-                    <UploadCloud size={24} className={`mx-auto mb-2 ${file ? 'text-indigo-600' : 'text-slate-300'}`} />
-                    <p className="text-[10px] font-black text-slate-500 uppercase truncate">
-                      {file ? file.name : "Select PDF File"}
-                    </p>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Asset Module (PDF)</label>
+                  <div className="relative group/upload">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setFile(e.target.files[0])}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className={`
+                      border-2 border-dashed rounded-[2rem] p-10 text-center transition-all duration-300
+                      ${file
+                        ? 'border-primary-500 bg-primary-50/30'
+                        : 'border-slate-100 bg-slate-50 group-hover/upload:border-primary-300 group-hover/upload:bg-white'}
+                    `}>
+                      <UploadCloud size={32} className={`mx-auto mb-4 transition-transform duration-500 group-hover/upload:-translate-y-1 ${file ? 'text-primary-600' : 'text-slate-300'}`} />
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate px-4">
+                        {file ? file.name : "Transmit PDF Module"}
+                      </p>
+                      <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-2">Max Payload: 10MB</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                onClick={handleUpload}
-                disabled={loading}
-                className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-indigo-600 transition-all disabled:opacity-50 shadow-lg mt-4"
-              >
-                {loading ? "Transmitting..." : "Initialize Upload"}
-              </button>
+                <Button
+                  onClick={handleUpload}
+                  loading={uploading}
+                  className="w-full py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary-600/20"
+                  icon={ArrowRight}
+                >
+                  Initiate Upload
+                </Button>
+              </div>
             </div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary-600/5 rounded-full blur-2xl -mr-16 -mt-16" />
+          </Card>
+
+          <div className="bg-slate-950 p-10 rounded-[3rem] text-white relative overflow-hidden group">
+              <div className="relative z-10">
+                <Sparkles size={32} className="mb-6 text-primary-500" />
+                <h3 className="font-black text-white text-lg mb-3 uppercase tracking-tight leading-none">AI Profile Indexing</h3>
+                <p className="text-sm text-slate-400 font-medium leading-relaxed mb-10">
+                  Uploaded assets are automatically parsed by the AI-ATS engine to optimize your alignment with global mandates.
+                </p>
+                <div className="h-1 w-16 bg-primary-600 rounded-full" />
+              </div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
           </div>
         </div>
 
-        {/* RIGHT: DOCUMENT REGISTRY (8 Cols) */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="flex items-center gap-3 mb-2">
-             <ShieldCheck size={18} className="text-slate-400" />
-             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Secure Registry</h2>
+        {/* RIGHT: DOCUMENT REGISTRY */}
+        <div className="lg:col-span-8 space-y-8">
+          <div className="flex items-center justify-between px-4 pb-4 border-b border-slate-50">
+             <div className="flex items-center gap-4">
+                <ShieldCheck size={20} className="text-primary-600" />
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900">Synchronized Registry</h2>
+             </div>
+             <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Vault ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
           </div>
 
           {resumes.length === 0 ? (
-            <div className="bg-slate-50 border-2 border-dashed border-slate-100 rounded-[32px] p-20 text-center">
-              <p className="text-xs font-black text-slate-300 uppercase tracking-widest">No documents detected in current vault.</p>
-            </div>
+            <EmptyState
+              title="Vault is Empty"
+              description="No documents detected in your current secure storage. Upload your resume to begin applying for indexed mandates."
+              icon={Layers}
+            />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {resumes.map((resume) => (
-                <div
+                <Card
                   key={resume._id}
-                  className="group bg-white border border-slate-200 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-50 transition-all"
+                  hover
+                  className="p-8 group flex flex-col md:flex-row md:items-center justify-between gap-8"
                 >
-                  <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                      <FileText size={24} />
+                  <div className="flex items-center gap-8">
+                    <div className="w-16 h-16 bg-slate-50 rounded-[1.5rem] flex items-center justify-center text-slate-300 border border-slate-100 group-hover:bg-primary-50 group-hover:text-primary-600 group-hover:border-primary-200 transition-all duration-500 shadow-inner">
+                      <FileText size={28} />
                     </div>
                     <div>
-                      <h3 className="text-lg font-black text-slate-900 leading-tight">
-                        {resume.title || resume.filename}
-                      </h3>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">
-                          {resume.filename}
-                        </span>
-                        <div className="w-1 h-1 bg-slate-200 rounded-full" />
-                        <div className="flex items-center gap-1 text-[10px] font-black text-slate-400 uppercase italic">
-                          <Calendar size={10} />
-                          {resume.uploadedAt ? new Date(resume.uploadedAt).toLocaleDateString("en-IN") : "—"}
-                        </div>
+                      <div className="flex items-center gap-3 mb-2">
+                         <Badge variant="primary" className="bg-primary-50 text-primary-700 text-[8px] border-none">Verified Asset</Badge>
+                         <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase">
+                            <Calendar size={12} />
+                            {resume.uploadedAt ? new Date(resume.uploadedAt).toLocaleDateString("en-GB") : "Timestamp Unknown"}
+                         </div>
                       </div>
+                      <h3 className="text-2xl font-black text-slate-950 uppercase tracking-tighter group-hover:text-primary-600 transition-colors leading-none mb-2">
+                        {resume.title || "UNTITLED_MODULE"}
+                      </h3>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{resume.filename}</p>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => setPreviewId(resume._id)}
-                      className="flex items-center gap-2 bg-slate-50 text-slate-600 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all"
+                      className="px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all shadow-xl shadow-transparent group-hover:shadow-slate-200/50"
+                      icon={Eye}
                     >
-                      <Eye size={14} /> View
-                    </button>
+                      Inspect
+                    </Button>
                     <button
                       onClick={() => handleDelete(resume._id)}
-                      className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      className="p-4 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all"
+                      title="Purge Record"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={20} />
                     </button>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           )}
+
+          <div className="bg-primary-50 p-10 rounded-[3rem] border border-primary-100 flex gap-6 items-center group mt-10">
+             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-primary-600/10 group-hover:scale-110 transition-transform">
+                <Info size={24} className="text-primary-600" />
+             </div>
+             <div>
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-1">Asset Policy</h4>
+                <p className="text-xs font-medium text-slate-600 leading-relaxed max-w-2xl">
+                  You can maintain up to <span className="font-black text-primary-600">5 distinct asset profiles</span> within your vault. Use unique document designations to quickly switch between tailored submissions.
+                </p>
+             </div>
+          </div>
         </div>
       </div>
 

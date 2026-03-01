@@ -1,3 +1,129 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight text-slate-900;
+  }
+
+  /* Accessibility: Visible Focus States */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-slate-50;
+  }
+
+  /* Selection colors */
+  ::selection {
+    @apply bg-primary-600/20 text-primary-900;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+
+  .btn-transition {
+    @apply transition-all duration-200 active:scale-95;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full hover:bg-slate-300;
+  }
+
+  .compass-loader {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 4px solid #f1f5f9;
+    position: relative;
+    @apply bg-white shadow-xl;
+  }
+
+  .compass-loader .needle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 30px;
+    background: #6379f7;
+    transform-origin: bottom center;
+    transform: translate(-50%, -100%) rotate(0deg);
+    animation: rotate-needle 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .compass-loader .pivot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    background: #0f172a;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .compass-loader .mark {
+    position: absolute;
+    font-size: 10px;
+    font-weight: 900;
+    @apply text-slate-300;
+  }
+
+  .compass-loader .mark.n { top: 4px; left: 50%; transform: translateX(-50%); }
+  .compass-loader .mark.e { right: 4px; top: 50%; transform: translateY(-50%); }
+  .compass-loader .mark.s { bottom: 4px; left: 50%; transform: translateX(-50%); }
+  .compass-loader .mark.w { left: 4px; top: 50%; transform: translateY(-50%); }
+}
+
+@keyframes rotate-needle {
+  0% { transform: translate(-50%, -100%) rotate(0deg); }
+  25% { transform: translate(-50%, -100%) rotate(90deg); }
+  50% { transform: translate(-50%, -100%) rotate(180deg); }
+  75% { transform: translate(-50%, -100%) rotate(270deg); }
+  100% { transform: translate(-50%, -100%) rotate(360deg); }
+}
+
+.animate-in {
+  animation-duration: 0.4s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+.fade-in { animation-name: fadeIn; }
+.slide-up { animation-name: slideUp; }
+.scale-in { animation-name: scaleIn; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
