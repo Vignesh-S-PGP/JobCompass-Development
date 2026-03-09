@@ -365,3 +365,119 @@ def update_application_status(application_id):
     )
 
     return {"message": "Status updated"}, 200
+
+@application_bp.route("/ats-check", methods=["POST"])
+@jwt_required()
+def ats_check():
+    user_id = get_jwt_identity()
+    data = request.json or {}
+
+    if not data.get("jobId") or not data.get("resumeId"):
+        return {"error": "Missing jobId or resumeId"}, 400
+
+    try:
+        job_oid = ObjectId(data["jobId"])
+        resume_oid = ObjectId(data["resumeId"])
+        user_oid = ObjectId(user_id)
+    except Exception:
+        return {"error": "Invalid IDs"}, 400
+
+    job = mongo.db.jobs.find_one({"_id": job_oid})
+    if not job:
+        return {"error": "Job not found"}, 404
+
+    resume = mongo.db.resumes.find_one({
+        "_id": resume_oid,
+        "userId": user_oid
+    })
+    if not resume:
+        return {"error": "Resume not found"}, 404
+
+    resume_text = (
+        resume.get("rawText")
+        or resume.get("text")
+        or resume.get("content")
+    )
+
+    if not resume_text:
+        return {"error": "Resume text is empty"}, 400
+
+    ats = calculate_ats_score(
+        job_desc=job.get("description", ""),
+        resume_text=resume_text
+    )
+
+    # ❌ NO DB INSERT HERE
+    return {
+        "atsScore": ats.get("score", 0),
+        "ats": ats
+    }, 200
+
+
+@application_bp.route("/saved/<job_id>", methods=["POST"])
+@jwt_required()
+def toggle_save_job(job_id):
+    user_id = ObjectId(get_jwt_identity())
+    job_oid = ObjectId(job_id)
+
+    existing = mongo.db.saved_jobs.find_one({
+        "userId": user_id,
+        "jobId": job_oid
+    })
+
+    if existing:
+        mongo.db.saved_jobs.delete_one({"_id": existing["_id"]})
+        return {"saved": False}, 200
+
+    mongo.db.saved_jobs.insert_one({
+        "userId": user_id,
+        "jobId": job_oid,
+        "createdAt": datetime.utcnow()
+    })
+
+    return {"saved": True}, 201
+
+@application_bp.route("/saved/ids", methods=["GET"])
+@jwt_required()
+def saved_job_ids():
+    user_id = ObjectId(get_jwt_identity())
+    ids = mongo.db.saved_jobs.find(
+        {"userId": user_id},
+        {"jobId": 1}
+    )
+    return {"ids": [str(i["jobId"]) for i in ids]}, 200
+
+@application_bp.route("/saved", methods=["GET"])
+@jwt_required()
+def get_saved_jobs():
+    user_id = ObjectId(get_jwt_identity())
+
+    saved = list(
+        mongo.db.saved_jobs.find({"userId": user_id})
+    )
+
+    job_ids = [s["jobId"] for s in saved]
+
+    jobs = list(
+        mongo.db.jobs.find({"_id": {"$in": job_ids}})
+    )
+
+    result = []
+    for job in jobs:
+        company = mongo.db.companies.find_one(
+            {"_id": job.get("companyId")}
+        )
+
+        result.append({
+            "_id": str(job["_id"]),
+            "title": job.get("title"),
+            "location": job.get("location"),
+            "jobType": job.get("jobType"),
+            "experience": job.get("experience"),
+            "company": {
+                "name": company.get("name"),
+                "logo": company.get("logo"),
+            } if company else None
+        })
+
+    return {"jobs": result}, 200

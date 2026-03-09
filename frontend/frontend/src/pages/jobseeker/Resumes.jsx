@@ -69,10 +69,7 @@ export default function Resumes() {
       {/* HEADER SECTION */}
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
         <div>
-          <h1 className="text-6xl font-black text-slate-900 tracking-tighter">Resumes.</h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mt-2">
-            AI-Ready Document Repository
-          </p>
+          <h1 className="text-6xl font-black text-slate-900 tracking-tighter">Resumes</h1>
         </div>
 
         <div className="bg-white border-2 border-slate-100 p-4 rounded-2xl min-w-[150px] shadow-sm flex items-center gap-4">
@@ -80,7 +77,7 @@ export default function Resumes() {
              <FileText size={24} />
           </div>
           <div>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Archived</p>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
             <p className="text-3xl font-black text-slate-900 leading-none">{resumes.length}</p>
           </div>
         </div>
@@ -93,7 +90,7 @@ export default function Resumes() {
           <div className="bg-white border-2 border-slate-900 rounded-[32px] p-8 shadow-[12px_12px_0px_0px_rgba(15,23,42,0.05)]">
             <div className="flex items-center gap-3 mb-6">
               <FilePlus size={18} className="text-indigo-600" />
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900">New Deployment</h3>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900">Upload Resume</h3>
             </div>
 
             {error && (
@@ -105,7 +102,7 @@ export default function Resumes() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Document Title</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Resume Title</label>
                 <input
                   type="text"
                   placeholder="e.g. Senior Dev Lead"
@@ -138,7 +135,7 @@ export default function Resumes() {
                 disabled={loading}
                 className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-indigo-600 transition-all disabled:opacity-50 shadow-lg mt-4"
               >
-                {loading ? "Transmitting..." : "Initialize Upload"}
+                {loading ? "Transmitting..." : "Upload"}
               </button>
             </div>
           </div>

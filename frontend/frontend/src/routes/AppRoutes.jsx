@@ -23,7 +23,7 @@ import AppliedJobs from "../pages/jobseeker/AppliedJobs"
 import ApplicationDetail from "../pages/jobseeker/ApplicationDetail"
 import ChatPage from "../pages/chat/ChatPage"
 import ApplicantProfile from "../pages/recruiter/ApplicantProfile"; 
-
+import SavedJobs from "../pages/jobseeker/SavedJobs";
 
 import AdminLayout from "../components/layout/AdminLayout"
 import AdminDashboard from "../pages/admin/Dashboard"
@@ -32,6 +32,8 @@ import JobManagement from "../pages/admin/JobManagement"
 import ATSMonitoring from "../pages/admin/ATSMonitoring"
 import RecruiterJobDetails from "../pages/recruiter/JobDetails"
 import RecruiterEditJob from "../pages/recruiter/EditJob"
+import Companies from "../pages/jobseeker/Companies";
+import CompanyProfile from "../pages/jobseeker/CompanyProfile";
 
 export default function AppRoutes() {
   return (
@@ -53,12 +55,14 @@ export default function AppRoutes() {
     <Route path="resumes" element={<Resumes />} />
     <Route path="profile" element={<JobSeekerProfile />} />
     <Route path="jobs" element={<Jobs />} />
-
+    <Route path="saved" element={<SavedJobs />} />
     {/* ✅ Applied Jobs */}
     <Route path="applications" element={<AppliedJobs />} />
     <Route path="applications/:id" element={<ApplicationDetail />} />
     <Route path="chat" element={<ChatPage />} />
     <Route path="chat/:conversationId" element={<ChatPage />} />
+    <Route path="companies" element={<Companies />} />
+<Route path="companies/:companyId" element={<CompanyProfile />} />
   </Route>
 </Route>
 

@@ -14,6 +14,8 @@ import {
 import logo from "../../assets/logo.png";
 import NotificationBell from "../notifications/NotificationBell";
 import api from "../../services/api";
+import { Bookmark } from "lucide-react";
+import { Building2 } from "lucide-react";
 
 export default function JobSeekerLayout() {
   const navigate = useNavigate();
@@ -37,14 +39,18 @@ useEffect(() => {
     navigate("/login");
   };
 
-  const menuItems = [
-    { name: "Dashboard", path: "/jobseeker/dashboard", icon: <LayoutDashboard size={20} /> },
-    { name: "Profile", path: "/jobseeker/profile", icon: <UserCircle size={20} /> },
-    { name: "Jobs", path: "/jobseeker/jobs", icon: <Briefcase size={20} /> },
-    { name: "Applied Jobs", path: "/jobseeker/applications", icon: <ClipboardList size={20} /> },
-    { name: "Resumes", path: "/jobseeker/resumes", icon: <FileText size={20} /> },
-    {name: "Messages",path: "/jobseeker/chat",icon: <MessageSquare size={20} />}
-  ];
+ const menuItems = [
+  { name: "Dashboard", path: "/jobseeker/dashboard", icon: <LayoutDashboard size={20} /> },
+  { name: "Profile", path: "/jobseeker/profile", icon: <UserCircle size={20} /> },
+  { name: "Jobs", path: "/jobseeker/jobs", icon: <Briefcase size={20} /> },
+
+  { name: "Companies", path: "/jobseeker/companies", icon: <Building2 size={20} /> },  // ⭐ NEW
+
+  { name: "Applied Jobs", path: "/jobseeker/applications", icon: <ClipboardList size={20} /> },
+  { name: "Resumes", path: "/jobseeker/resumes", icon: <FileText size={20} /> },
+  { name: "Saved Jobs", path: "/jobseeker/saved", icon: <Bookmark size={20} /> },
+  { name: "Messages", path: "/jobseeker/chat", icon: <MessageSquare size={20} /> }
+];
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50">

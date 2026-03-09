@@ -62,6 +62,8 @@ def create_app():
     from app.routes.applicant_profile_routes import applicant_profile_bp
     from app.routes.admin_routes import admin_bp
     from app.routes.chat_routes import chat_bp
+    from app.routes.dashboard_routes import dashboard_bp
+    app.register_blueprint(dashboard_bp)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(resume_bp)

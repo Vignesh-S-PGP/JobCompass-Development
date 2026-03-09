@@ -21,8 +21,15 @@ def get_notifications():
     )
 
     for n in notifications:
-        n["_id"] = str(n["_id"])
-        n["userId"] = str(n["userId"])
+     n["_id"] = str(n["_id"])
+     n["userId"] = str(n["userId"])
+
+     if "meta" in n:
+        if "jobId" in n["meta"]:
+            n["meta"]["jobId"] = str(n["meta"]["jobId"])
+
+        if "companyId" in n["meta"]:
+            n["meta"]["companyId"] = str(n["meta"]["companyId"])
 
     return {"notifications": notifications}, 200
 

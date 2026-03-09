@@ -80,8 +80,7 @@ export default function RecruiterDashboard() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Recruiter Console.</h1>
-          <p className="text-slate-500 font-medium mt-1">Manage your talent pipeline and job postings.</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Dashboard</h1>
         </div>
         <Link
           to="/recruiter/jobs/create"

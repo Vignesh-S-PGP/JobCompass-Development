@@ -25,7 +25,7 @@ export default function Company() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    api.get("/company/my").then(res => {
+    api.get("/companies/my").then(res => {
       if (res.data.company) {
         setForm(res.data.company)
       }

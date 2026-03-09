@@ -20,7 +20,7 @@ export default function RecruiterLayout() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get("/company/my")
+    api.get("/companies/my")
       .then(res => {
         if (!res.data.company && location.pathname !== "/recruiter/company") {
           navigate("/recruiter/company");

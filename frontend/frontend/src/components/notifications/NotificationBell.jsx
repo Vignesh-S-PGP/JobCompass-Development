@@ -77,7 +77,15 @@ useEffect(() => {
               notifications.map(n => (
                 <button
                   key={n._id}
-                  onClick={() => markAsRead(n._id)}
+                  onClick={()=>{
+   markAsRead(n._id)
+
+   if(n.meta?.jobId){
+      navigate("/jobs",{
+        state:{ openJobId: n.meta.jobId }
+      })
+   }
+}}
                   className={`w-full text-left px-6 py-4 transition-all hover:bg-white/5 border-b border-white/5 flex gap-3
                     ${n.isRead ? "opacity-60" : "bg-indigo-500/5"}`}
                 >

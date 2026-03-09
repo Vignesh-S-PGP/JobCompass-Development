@@ -3,14 +3,20 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions.db import mongo
 from bson import ObjectId
 from datetime import datetime
+from app.services.notification_service import create_notification
 
 job_bp = Blueprint("jobs", __name__, url_prefix="/api/jobs")
 
 @job_bp.route("", methods=["POST"])
 @jwt_required()
 def create_job():
+
     user_id = get_jwt_identity()
     data = request.json
+
+    # ==============================
+    # GET COMPANY OF RECRUITER
+    # ==============================
 
     company = mongo.db.companies.find_one(
         {"ownerId": ObjectId(user_id)}
@@ -18,6 +24,11 @@ def create_job():
 
     if not company:
         return {"error": "Company not found. Create company first."}, 400
+
+
+    # ==============================
+    # CREATE JOB
+    # ==============================
 
     job = {
         "title": data.get("title"),
@@ -33,7 +44,46 @@ def create_job():
         "status": "active"
     }
 
-    mongo.db.jobs.insert_one(job)
+    result = mongo.db.jobs.insert_one(job)
+
+    job_id = result.inserted_id
+
+
+    # ==================================
+    # FIND USERS FOLLOWING THIS COMPANY
+    # ==================================
+
+    followers = mongo.db.company_followers.find({
+        "companyId": company["_id"]
+    })
+
+
+    # ==================================
+    # CREATE NOTIFICATION FOR EACH USER
+    # ==================================
+
+    for follower in followers:
+
+        try:
+
+            create_notification(
+                user_id=follower["userId"],
+                title=f"{company['name']} posted a new job",
+                message=job["title"],
+                type="company_job_posted",
+                meta={
+                    "jobId": str(job_id),
+                    "companyId": str(company["_id"])
+                }
+            )
+
+        except Exception as e:
+            print("Notification error:", e)
+
+
+    # ==================================
+    # RESPONSE
+    # ==================================
 
     return {"message": "Job created successfully"}, 201
 
@@ -188,3 +238,4 @@ def get_job_detail(job_id):
     job["createdAt"] = job["createdAt"].isoformat()
 
     return {"job": job}, 200
+

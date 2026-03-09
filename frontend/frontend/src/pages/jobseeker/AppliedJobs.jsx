@@ -1,27 +1,40 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
-import { 
-  Building2, 
-  Search, 
+import {
+  Building2,
+  Search,
   ArrowUpRight,
-  Briefcase
+  Briefcase,
+  Calendar
 } from "lucide-react";
 
 export default function AppliedJobs() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
   const navigate = useNavigate();
 
   useEffect(() => {
     api.get("/applications/my")
       .then(res => setApplications(res.data.applications || []))
-      .catch(err => {
-        console.error("❌ Failed to load applications:", err);
-        setApplications([]);
-      })
+      .catch(() => setApplications([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const filteredApplications =
+    filter === "all"
+      ? applications
+      : applications.filter(a => a.status === filter);
+
+  const getStatusColor = (status) => {
+    const map = {
+      applied: "text-indigo-700 bg-indigo-50 border-indigo-100",
+      shortlisted: "text-emerald-700 bg-emerald-50 border-emerald-100",
+      rejected: "text-rose-700 bg-rose-50 border-rose-100",
+    };
+    return map[status] || "text-slate-600 bg-slate-50 border-slate-200";
+  };
 
   if (loading) {
     return (
@@ -31,107 +44,84 @@ export default function AppliedJobs() {
     );
   }
 
-  const getStatusColor = (status) => {
-    const map = {
-      shortlisted: "text-emerald-700 bg-emerald-50 border-emerald-100",
-      rejected: "text-rose-700 bg-rose-50 border-rose-100",
-      pending: "text-amber-700 bg-amber-50 border-amber-100",
-    };
-    return map[status] || "text-slate-600 bg-slate-50 border-slate-200";
-  };
-
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      
-      {/* Header Area */}
-      <div className="flex items-center justify-between pb-4">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-          Applied Jobs
-        </h1>
-        
-        <div className="flex items-center gap-2 bg-slate-900 text-white px-4 py-1.5 rounded-lg shadow-sm">
-           <span className="text-[10px] font-black uppercase tracking-widest opacity-70">Total</span>
-           <span className="text-lg font-bold leading-none">{applications.length}</span>
+
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-slate-900">Applied Jobs</h1>
+
+        <div className="flex gap-2">
+          {["all", "applied", "shortlisted", "rejected"].map(s => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase border transition
+                ${filter === s
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-500 border-slate-200 hover:border-slate-400"}`}
+            >
+              {s}
+            </button>
+          ))}
         </div>
       </div>
 
-      {applications.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-20 text-center shadow-sm">
+      {filteredApplications.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-20 text-center">
           <Search size={40} className="mx-auto text-slate-200 mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900">No records found</h3>
-          <p className="text-slate-500 text-sm mt-1">You haven't applied to any jobs yet.</p>
+          <p className="text-slate-500">No applications found</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          
-          {/* HIGH VISIBILITY TABLE HEADER */}
-          <div className="hidden md:grid grid-cols-12 bg-slate-800 border-b border-slate-700 px-6 py-4 items-center">
-            <div className="col-span-5 flex items-center gap-2">
-              <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Role & Entity</span>
-            </div>
-            <div className="col-span-3">
-              <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Status</span>
-            </div>
-            <div className="col-span-2 text-center">
-              <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">ATS Match</span>
-            </div>
-            <div className="col-span-2 text-right">
-              <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Details</span>
-            </div>
-          </div>
-
-          {/* Table Rows */}
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <div className="divide-y divide-slate-100">
-            {applications.map(app => (
+            {filteredApplications.map(app => (
               <div
                 key={app.applicationId}
-                className="group grid grid-cols-1 md:grid-cols-12 items-center px-6 py-5 gap-4 hover:bg-slate-50/80 transition-colors"
+                className="grid grid-cols-12 gap-4 px-6 py-5 hover:bg-slate-50 transition"
               >
-                {/* Info */}
+                {/* JOB */}
                 <div className="col-span-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0 group-hover:bg-white transition-colors">
-                    {app.company?.logo ? (
-                      <img src={app.company.logo} alt="logo" className="max-h-8 max-w-[32px] object-contain" />
-                    ) : (
-                      <Building2 className="text-slate-300" size={20} />
-                    )}
+                  <div className="w-12 h-12 bg-slate-50 border rounded-lg flex items-center justify-center">
+                    {app.company?.logo
+                      ? <img src={app.company.logo} className="max-h-8" />
+                      : <Building2 className="text-slate-300" />}
                   </div>
-                  <div className="truncate">
-                    <h3 className="font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
-                      {app.job?.title || "Job Title"}
-                    </h3>
-                    <p className="text-sm font-medium text-slate-500">
-                      {app.company?.name || "Company"}
-                    </p>
+                  <div>
+                    <p className="font-bold text-slate-900">{app.job?.title}</p>
+                    <p className="text-sm text-slate-500">{app.company?.name}</p>
                   </div>
                 </div>
 
-                {/* Status Badge */}
+                {/* STATUS */}
                 <div className="col-span-3">
-                  <span className={`px-3 py-1 rounded-full border text-[11px] font-bold flex items-center w-fit gap-2 ${getStatusColor(app.status)}`}>
-                    <div className="w-1 h-1 rounded-full bg-current" />
-                    <span className="capitalize">{app.status}</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(app.status)}`}>
+                    {app.status}
                   </span>
                 </div>
 
-                {/* Score */}
-                <div className="col-span-2 text-center">
-                  {typeof app.atsScore === "number" ? (
-                    <div className="inline-flex flex-col">
-                      <span className="text-lg font-bold text-slate-900 leading-none">
-                        {app.atsScore}<span className="text-xs text-indigo-500 ml-0.5">%</span>
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-[10px] font-bold text-slate-300 uppercase italic tracking-tighter">Evaluating</span>
-                  )}
+                {/* ATS */}
+                <div className="col-span-2 text-center font-bold">
+                  {typeof app.atsScore === "number" ? `${app.atsScore}%` : "—"}
                 </div>
 
-                {/* Action */}
-                <div className="col-span-2 text-right">
+                {/* APPLIED DATE */}
+                <div className="col-span-1 flex items-center gap-1 text-xs text-slate-500">
+                  <Calendar size={12} />
+                  {app.appliedAt
+                    ? new Date(app.appliedAt).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "—"}
+                </div>
+
+                {/* ACTION */}
+                <div className="col-span-1 text-right">
                   <button
                     onClick={() => navigate(`/jobseeker/applications/${app.applicationId}`)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-900 hover:text-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 transition-all shadow-sm"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-indigo-600"
                   >
                     View <ArrowUpRight size={14} />
                   </button>

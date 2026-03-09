@@ -116,10 +116,8 @@ export default function Profile() {
       {/* HEADER SECTION */}
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
         <div>
-          <h1 className="text-6xl font-black text-slate-900 tracking-tighter">Profile.</h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mt-2">
-            Professional Identity & Resume
-          </p>
+          <h1 className="text-6xl font-black text-slate-900 tracking-tighter">Profile</h1>
+
         </div>
         <button
           onClick={handleSubmit}
