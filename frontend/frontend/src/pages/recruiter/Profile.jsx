@@ -7,305 +7,172 @@ import {
   CheckCircle2,
   Briefcase,
   Trash2,
-  ShieldAlert
+  ShieldAlert,
+  Mail,
+  Building2,
+  Key
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Card, Button, Input, Badge } from "../../components/ui";
+import { motion } from "framer-motion";
 
 export default function Profile() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    fullName: "",
+    designation: "",
+    profileImage: ""
+  });
 
-  const navigate = useNavigate()
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const [form,setForm] = useState({
-    fullName:"",
-    designation:"",
-    profileImage:""
-  })
-
-  const [saving,setSaving] = useState(false)
-  const [success,setSuccess] = useState(false)
-
-  /* LOAD PROFILE */
-
-  useEffect(()=>{
-
-    api.get("/recruiter/profile")
-      .then(res=>{
-        if(res.data.profile){
-          setForm(res.data.profile)
-        }
-      })
-
-  },[])
-
-
-  /* IMAGE UPLOAD */
+  useEffect(() => {
+    api.get("/recruiter/profile").then(res => {
+      if (res.data.profile) {
+        setForm(res.data.profile);
+      }
+    });
+  }, []);
 
   const handleImageUpload = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setForm({ ...form, profileImage: reader.result });
+    reader.readAsDataURL(file);
+  };
 
-    const file = e.target.files[0]
-
-    if(!file) return
-
-    const reader = new FileReader()
-
-    reader.onload = () =>
-      setForm({...form,profileImage:reader.result})
-
-    reader.readAsDataURL(file)
-
-  }
-
-
-  /* SAVE PROFILE */
-
-  const handleSubmit = async()=>{
-
-    setSaving(true)
-
-    await api.post("/recruiter/profile",form)
-
-    setSaving(false)
-
-    setSuccess(true)
-
-    setTimeout(()=>setSuccess(false),3000)
-
-  }
-
-
-  /* DELETE ACCOUNT */
-
-  const handleDeleteAccount = async()=>{
-
-    if(!window.confirm("Deactivate your recruiter account?")) return
-
-    try{
-
-      await api.delete("/auth/delete-account")
-
-      localStorage.clear()
-
-      navigate("/login")
-
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      await api.post("/recruiter/profile", form);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
     }
-    catch{
-      alert("Failed to delete account")
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("Deactivate your recruiter account? This action cannot be undone.")) return;
+    try {
+      await api.delete("/auth/delete-account");
+      localStorage.clear();
+      navigate("/login");
+    } catch {
+      alert("Failed to delete account");
     }
+  };
 
-  }
-
-
-
-  return(
-
-    <div className="max-w-6xl mx-auto space-y-8">
-
+  return (
+    <div className="max-w-5xl mx-auto space-y-10 pb-20">
       {/* PAGE HEADER */}
-
-      <div className="flex items-center justify-between border-b pb-6">
-
-        <div>
-
-          <h1 className="text-3xl font-bold text-slate-900">
-            Recruiter Profile
-          </h1>
-
-          <p className="text-slate-500 text-sm">
-            Manage your recruiter identity and personal information
-          </p>
-
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tight">Recruiter Profile</h1>
+          <p className="text-muted-foreground font-medium">Manage your personal recruiter identity.</p>
         </div>
-
-        <button
+        <Button
           onClick={handleSubmit}
           disabled={saving}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all
-          ${saving
-            ? "bg-slate-200 text-slate-500"
-            : success
-              ? "bg-emerald-600 text-white"
-              : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md"}
-          `}
+          className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 min-w-[160px]"
         >
-
-          {saving
-            ? "Saving..."
-            : success
-              ? <CheckCircle2 size={18}/>
-              : <>
-                  <Save size={18}/>
-                  Save Changes
-                </>
-          }
-
-        </button>
-
+          {saving ? "Saving..." : success ? <><CheckCircle2 size={18} className="mr-2" /> Saved</> : <><Save size={18} className="mr-2" /> Save Changes</>}
+        </Button>
       </div>
 
-
-
-      {/* GRID */}
-
-      <div className="grid md:grid-cols-3 gap-8">
-
-        {/* PROFILE CARD */}
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm h-fit">
-
-          <div className="flex flex-col items-center">
-
-            <div className="relative group">
-
-              <img
-                src={form.profileImage || "/avatar-placeholder.png"}
-                className="w-36 h-36 rounded-2xl object-cover border-4 border-white shadow-md"
-              />
-
-              <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition cursor-pointer">
-
-                <Camera size={20} className="text-white"/>
-
-                <input
-                  type="file"
-                  hidden
-                  onChange={handleImageUpload}
-                />
-
-              </label>
-
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-1 space-y-10">
+          {/* PHOTO CARD */}
+          <Card className="p-8 flex flex-col items-center text-center space-y-6 rounded-[40px] border-none shadow-sm overflow-hidden relative group">
+            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-primary/20 to-primary/5" />
+            <div className="relative z-10 pt-4">
+               <div className="relative">
+                  <div className="w-32 h-32 rounded-[48px] bg-card p-1 shadow-2xl border border-border overflow-hidden">
+                    <img
+                      src={form.profileImage || "/avatar-placeholder.png"}
+                      className="w-full h-full object-cover rounded-[44px]"
+                      alt=""
+                    />
+                  </div>
+                  <label className="absolute -bottom-2 -right-2 bg-slate-900 text-white p-3 rounded-2xl shadow-xl cursor-pointer hover:bg-primary transition-colors border-4 border-card">
+                    <Camera size={18}/>
+                    <input type="file" hidden onChange={handleImageUpload}/>
+                  </label>
+               </div>
             </div>
-
-            <div className="text-center mt-6">
-
-              <h2 className="text-lg font-semibold text-slate-900">
-                {form.fullName || "Your Name"}
-              </h2>
-
-              <p className="text-sm text-slate-500">
-                {form.designation || "Recruiter"}
-              </p>
-
+            <div className="space-y-1">
+               <h2 className="text-2xl font-black tracking-tight">{form.fullName || "Your Name"}</h2>
+               <p className="text-primary font-bold text-sm tracking-tight">{form.designation || "Recruiter"}</p>
             </div>
-
-          </div>
-
-        </div>
-
-
-
-        {/* FORM */}
-
-        <div className="md:col-span-2 space-y-6">
-
-          {/* PERSONAL INFO */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
-
-            <h3 className="text-sm font-semibold text-slate-900">
-              Personal Information
-            </h3>
-
-
-            {/* NAME */}
-
-            <div>
-
-              <label className="text-xs font-semibold text-slate-400 uppercase ml-1">
-                Full Name
-              </label>
-
-              <div className="relative mt-1">
-
-                <User
-                  size={18}
-                  className="absolute left-3 top-3 text-slate-400"
-                />
-
-                <input
-                  value={form.fullName}
-                  onChange={e=>setForm({...form,fullName:e.target.value})}
-                  placeholder="Enter your name"
-                  className="w-full bg-slate-50 rounded-xl pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-indigo-600 outline-none"
-                />
-
-              </div>
-
-            </div>
-
-
-
-            {/* DESIGNATION */}
-
-            <div>
-
-              <label className="text-xs font-semibold text-slate-400 uppercase ml-1">
-                Job Title
-              </label>
-
-              <div className="relative mt-1">
-
-                <Briefcase
-                  size={18}
-                  className="absolute left-3 top-3 text-slate-400"
-                />
-
-                <input
-                  value={form.designation}
-                  onChange={e=>setForm({...form,designation:e.target.value})}
-                  placeholder="Senior Technical Recruiter"
-                  className="w-full bg-slate-50 rounded-xl pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-indigo-600 outline-none"
-                />
-
-              </div>
-
-            </div>
-
-          </div>
-
-
+          </Card>
 
           {/* DANGER ZONE */}
-
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-8 flex items-center justify-between">
-
-            <div>
-
-              <div className="flex items-center gap-2 mb-1">
-
-                <ShieldAlert size={18} className="text-red-500"/>
-
-                <h3 className="font-semibold text-red-900">
-                  Danger Zone
-                </h3>
-
-              </div>
-
-              <p className="text-sm text-red-700">
+          <Card className="p-8 border-none bg-rose-500/5 space-y-6 rounded-[40px] ring-1 ring-rose-500/10">
+             <div className="flex items-center gap-3 text-rose-600">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                   <ShieldAlert size={18}/>
+                </div>
+                <h3 className="text-lg font-black tracking-tight">Danger Zone</h3>
+             </div>
+             <p className="text-sm text-rose-700/70 font-medium">
                 Deactivating your account will remove recruiter access and hide your jobs.
-              </p>
-
-            </div>
-
-
-            <button
-              onClick={handleDeleteAccount}
-              className="flex items-center gap-2 bg-white text-red-600 px-4 py-2 rounded-lg border border-red-300 font-semibold hover:bg-red-600 hover:text-white transition"
-            >
-
-              <Trash2 size={18}/>
-
-              Deactivate
-
-            </button>
-
-          </div>
-
+             </p>
+             <Button
+                variant="outline"
+                onClick={handleDeleteAccount}
+                className="w-full rounded-xl border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white transition-all font-black uppercase tracking-widest text-[10px]"
+             >
+                <Trash2 size={16} className="mr-2" /> Deactivate Account
+             </Button>
+          </Card>
         </div>
 
+        <div className="lg:col-span-2 space-y-10">
+          {/* PROFILE INFO */}
+          <Card className="p-8 space-y-8 rounded-[40px]">
+             <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                   <User size={18}/>
+                </div>
+                <h3 className="text-xl font-black tracking-tight">Identity Details</h3>
+             </div>
+             <div className="space-y-6">
+                <Input
+                  label="Full Name"
+                  placeholder="John Doe"
+                  value={form.fullName}
+                  onChange={e => setForm({ ...form, fullName: e.target.value })}
+                  className="bg-muted/30 border-none rounded-xl h-12"
+                />
+                <Input
+                  label="Job Title / Designation"
+                  placeholder="Senior Talent Acquisition"
+                  value={form.designation}
+                  onChange={e => setForm({ ...form, designation: e.target.value })}
+                  className="bg-muted/30 border-none rounded-xl h-12"
+                />
+             </div>
+          </Card>
+
+          {/* SECURITY & PREFERENCES (Placeholder for future) */}
+          <Card className="p-8 space-y-8 rounded-[40px] opacity-60">
+             <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
+                   <Key size={18}/>
+                </div>
+                <h3 className="text-xl font-black tracking-tight">Preferences</h3>
+             </div>
+             <div className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border border-dashed border-border">
+                <p className="text-sm text-muted-foreground font-medium italic">More settings coming soon...</p>
+                <Badge variant="secondary" className="text-[8px] font-black uppercase tracking-widest">v2.0 Beta</Badge>
+             </div>
+          </Card>
+        </div>
       </div>
-
     </div>
-
-  )
-
+  );
 }

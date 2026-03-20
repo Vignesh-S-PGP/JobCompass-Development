@@ -120,3 +120,30 @@ def admin_ats_monitoring():
 
     distribution = list(mongo.db.applications.aggregate(pipeline))
     return {"distribution": distribution}, 200
+
+
+@admin_bp.route("/theme", methods=["GET", "POST"])
+def admin_theme_management():
+    if request.method == "POST":
+        # Check for admin role if it's a POST
+        from flask_jwt_extended import get_jwt
+        @jwt_required()
+        @role_required("admin")
+        def update_theme():
+            theme = request.json.get("theme")
+            if not theme:
+                return {"error": "Theme is required"}, 400
+
+            mongo.db.settings.update_one(
+                {"key": "global_theme"},
+                {"$set": {"value": theme, "updatedAt": datetime.utcnow()}},
+                upsert=True
+            )
+            return {"message": "Global theme updated"}, 200
+
+        return update_theme()
+
+    # GET
+    setting = mongo.db.settings.find_one({"key": "global_theme"})
+    theme = setting["value"] if setting else "indigo"
+    return {"theme": theme}, 200
