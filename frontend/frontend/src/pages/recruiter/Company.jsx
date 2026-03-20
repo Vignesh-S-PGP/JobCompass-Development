@@ -1,196 +1,305 @@
 import { useEffect, useState } from "react"
 import api from "../../services/api"
-import { 
-  Building2, 
-  Globe, 
-  MapPin, 
-  Users, 
-  Briefcase, 
-  Camera, 
-  Save, 
-  ExternalLink 
+
+import {
+  Building2,
+  Globe,
+  MapPin,
+  Users,
+  Briefcase,
+  Camera,
+  Save,
+  ExternalLink
 } from "lucide-react"
 
 export default function Company() {
-  const [form, setForm] = useState({
-    name: "",
-    industry: "",
-    location: "",
-    size: "",
-    website: "",
-    about: "",
-    logo: ""
+
+  const [form,setForm] = useState({
+    name:"",
+    industry:"",
+    location:"",
+    size:"",
+    website:"",
+    about:"",
+    logo:""
   })
 
-  const [saving, setSaving] = useState(false)
+  const [saving,setSaving] = useState(false)
 
-  useEffect(() => {
-    api.get("/companies/my").then(res => {
-      if (res.data.company) {
-        setForm(res.data.company)
-      }
-    })
-  }, [])
+  /* LOAD COMPANY */
+
+  useEffect(()=>{
+
+    api.get("/companies/my")
+      .then(res=>{
+        if(res.data.company){
+          setForm(res.data.company)
+        }
+      })
+
+  },[])
+
+
+  /* LOGO UPLOAD */
 
   const handleLogoUpload = e => {
+
     const file = e.target.files[0]
-    if (!file) return
+
+    if(!file) return
 
     const reader = new FileReader()
-    reader.onload = () =>
-      setForm({ ...form, logo: reader.result })
+
+    reader.onload = () => setForm({...form,logo:reader.result})
+
     reader.readAsDataURL(file)
+
   }
 
-  const handleSubmit = async () => {
+
+  /* SAVE */
+
+  const handleSubmit = async()=>{
+
     setSaving(true)
-    await api.post("/company", form)
+
+    await api.post("/companies", form)
+
     setSaving(false)
+
     alert("Company profile saved")
+
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50/50 py-10 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
-        
-        {/* Header / Hero Section */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-slate-900 to-slate-700" />
-          <div className="px-8 pb-8">
-            <div className="relative flex items-end gap-6 -mt-12">
-              <div className="relative group">
-                <img
-                  src={form.logo || "/company-placeholder.png"}
-                  alt="logo"
-                  className="w-32 h-32 rounded-2xl object-cover bg-white border-4 border-white shadow-md"
-                />
-                <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-2xl opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                  <Camera size={24} />
-                  <input type="file" hidden onChange={handleLogoUpload} />
-                </label>
-              </div>
 
-              <div className="flex-1 pb-2">
-                <input
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  placeholder="Enter Company Name"
-                  className="text-3xl font-black text-slate-900 w-full outline-none bg-transparent placeholder:text-slate-300"
-                />
-                <div className="flex items-center gap-4 text-slate-500 text-sm mt-1 font-medium">
-                  <span className="flex items-center gap-1"><Briefcase size={14}/> {form.industry || "Industry"}</span>
-                  <span className="flex items-center gap-1"><MapPin size={14}/> {form.location || "Location"}</span>
-                </div>
-              </div>
+  return(
 
-              {form.website && (
-                <a
-                  href={form.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mb-4 p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                >
-                  <ExternalLink size={20} />
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-8">
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left Side: About */}
-          <div className="md:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-              <div className="flex items-center gap-2 mb-6">
-                <Building2 className="text-slate-400" size={20} />
-                <h3 className="font-bold text-slate-900">About Company</h3>
-              </div>
-              <textarea
-                value={form.about}
-                onChange={e => setForm({ ...form, about: e.target.value })}
-                placeholder="Describe your company culture, mission, and vision…"
-                className="w-full border-none bg-slate-50 rounded-xl p-4 min-h-[200px] focus:ring-2 focus:ring-slate-900 transition-all text-slate-600 leading-relaxed"
+      {/* HERO */}
+
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+
+        <div className="h-40 bg-gradient-to-r from-indigo-600 to-slate-900"/>
+
+        <div className="px-8 pb-8">
+
+          <div className="flex gap-6 -mt-14 items-end">
+
+            {/* LOGO */}
+
+            <div className="relative group">
+
+              <img
+                src={form.logo || "/company-placeholder.png"}
+                className="w-32 h-32 rounded-2xl bg-white object-cover border-4 border-white shadow-md"
               />
+
+              <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 cursor-pointer transition">
+
+                <Camera size={22} className="text-white"/>
+
+                <input type="file" hidden onChange={handleLogoUpload}/>
+
+              </label>
+
             </div>
-          </div>
 
-          {/* Right Side: Quick Details */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
-              <h3 className="font-bold text-slate-900 text-sm uppercase tracking-widest border-b border-slate-100 pb-4">Company Details</h3>
-              
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Industry</label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-3 text-slate-400" size={16} />
-                    <input
-                      value={form.industry}
-                      onChange={e => setForm({ ...form, industry: e.target.value })}
-                      placeholder="e.g. Technology"
-                      className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-slate-900 transition-all"
-                    />
-                  </div>
-                </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Location</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 text-slate-400" size={16} />
-                    <input
-                      value={form.location}
-                      onChange={e => setForm({ ...form, location: e.target.value })}
-                      placeholder="e.g. New York, NY"
-                      className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-slate-900 transition-all"
-                    />
-                  </div>
-                </div>
+            {/* COMPANY NAME */}
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Company Size</label>
-                  <div className="relative">
-                    <Users className="absolute left-3 top-3 text-slate-400" size={16} />
-                    <input
-                      value={form.size}
-                      onChange={e => setForm({ ...form, size: e.target.value })}
-                      placeholder="e.g. 11-50 employees"
-                      className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-slate-900 transition-all"
-                    />
-                  </div>
-                </div>
+            <div className="flex-1">
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Website URL</label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-3 text-slate-400" size={16} />
-                    <input
-                      value={form.website}
-                      onChange={e => setForm({ ...form, website: e.target.value })}
-                      placeholder="https://company.com"
-                      className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-slate-900 transition-all"
-                    />
-                  </div>
-                </div>
+              <input
+                value={form.name}
+                onChange={e=>setForm({...form,name:e.target.value})}
+                placeholder="Company Name"
+                className="text-3xl font-bold text-slate-900 outline-none w-full bg-transparent placeholder:text-slate-300"
+              />
+
+              <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
+
+                <span className="flex items-center gap-1">
+
+                  <Briefcase size={14}/>
+                  {form.industry || "Industry"}
+
+                </span>
+
+                <span className="flex items-center gap-1">
+
+                  <MapPin size={14}/>
+                  {form.location || "Location"}
+
+                </span>
+
               </div>
+
             </div>
 
-            {/* Save Button */}
-            <button
-              onClick={handleSubmit}
-              disabled={saving}
-              className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all disabled:opacity-50 shadow-xl shadow-slate-200"
-            >
-              {saving ? (
-                <span className="animate-pulse">Saving Profile...</span>
-              ) : (
-                <>
-                  <Save size={18} /> Save Company Profile
-                </>
-              )}
-            </button>
+
+            {/* WEBSITE */}
+
+            {form.website && (
+
+              <a
+                href={form.website}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2 rounded-lg hover:bg-indigo-50 text-indigo-600 transition"
+              >
+
+                <ExternalLink size={20}/>
+
+              </a>
+
+            )}
+
           </div>
+
         </div>
+
       </div>
+
+
+
+      {/* MAIN GRID */}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        {/* ABOUT */}
+
+        <div className="md:col-span-2 bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+
+          <div className="flex items-center gap-2 mb-6">
+
+            <Building2 className="text-slate-400" size={20}/>
+
+            <h3 className="font-semibold text-slate-900">
+              About Company
+            </h3>
+
+          </div>
+
+          <textarea
+            value={form.about}
+            onChange={e=>setForm({...form,about:e.target.value})}
+            placeholder="Describe your company mission, culture and values..."
+            className="w-full bg-slate-50 rounded-xl p-4 min-h-[220px] focus:ring-2 focus:ring-indigo-600 outline-none text-slate-600"
+          />
+
+        </div>
+
+
+
+        {/* DETAILS */}
+
+        <div className="space-y-6">
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
+
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest border-b border-slate-100 pb-4">
+              Company Details
+            </h3>
+
+
+            <Input
+              icon={<Briefcase size={16}/>}
+              label="Industry"
+              value={form.industry}
+              onChange={v=>setForm({...form,industry:v})}
+              placeholder="Technology"
+            />
+
+
+            <Input
+              icon={<MapPin size={16}/>}
+              label="Location"
+              value={form.location}
+              onChange={v=>setForm({...form,location:v})}
+              placeholder="Bangalore"
+            />
+
+
+            <Input
+              icon={<Users size={16}/>}
+              label="Company Size"
+              value={form.size}
+              onChange={v=>setForm({...form,size:v})}
+              placeholder="11-50 employees"
+            />
+
+
+            <Input
+              icon={<Globe size={16}/>}
+              label="Website"
+              value={form.website}
+              onChange={v=>setForm({...form,website:v})}
+              placeholder="https://company.com"
+            />
+
+          </div>
+
+
+          {/* SAVE BUTTON */}
+
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 transition shadow-lg shadow-indigo-100"
+          >
+
+            {saving
+              ? "Saving..."
+              : <>
+                  <Save size={18}/>
+                  Save Company Profile
+                </>
+            }
+
+          </button>
+
+        </div>
+
+      </div>
+
     </div>
+
   )
+
+}
+
+
+
+/* INPUT COMPONENT */
+
+function Input({label,icon,value,onChange,placeholder}){
+
+  return(
+
+    <div className="space-y-1">
+
+      <label className="text-xs text-slate-400 font-semibold uppercase ml-1">
+        {label}
+      </label>
+
+      <div className="relative">
+
+        <div className="absolute left-3 top-3 text-slate-400">
+          {icon}
+        </div>
+
+        <input
+          value={value}
+          onChange={e=>onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full bg-slate-50 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-600 outline-none"
+        />
+
+      </div>
+
+    </div>
+
+  )
+
 }

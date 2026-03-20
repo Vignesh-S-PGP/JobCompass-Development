@@ -203,3 +203,39 @@ def start_chat():
     return {
         "conversationId": str(result.inserted_id)
     }, 201
+
+@chat_bp.route("/start-direct", methods=["POST"])
+@jwt_required()
+def start_chat_direct():
+
+    data = request.get_json() or {}
+    target_user_id = data.get("userId")
+
+    if not target_user_id:
+        return {"error": "userId required"}, 400
+
+    user_id = ObjectId(get_jwt_identity())
+    target_user_id = ObjectId(target_user_id)
+
+    # 🔹 Check existing conversation
+    existing = mongo.db.conversations.find_one({
+        "participants": {"$all": [user_id, target_user_id]}
+    })
+
+    if existing:
+        return {
+            "conversationId": str(existing["_id"])
+        }, 200
+
+    # 🔹 Create new conversation
+    conversation = {
+        "participants": [user_id, target_user_id],
+        "createdAt": datetime.utcnow(),
+        "updatedAt": datetime.utcnow()
+    }
+
+    result = mongo.db.conversations.insert_one(conversation)
+
+    return {
+        "conversationId": str(result.inserted_id)
+    }, 201

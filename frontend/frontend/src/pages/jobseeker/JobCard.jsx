@@ -8,87 +8,120 @@ import {
 
 export default function JobCard({
   job = {},
-  priority = false,
   matchedSkills = [],
   isSaved = false,
   onSaveToggle,
   onOpen
 }) {
+
   const company = job.company ?? {};
 
   return (
+
     <div
       onClick={onOpen}
-      className="group relative bg-white border border-slate-200 rounded-[32px] mb-4 p-8 cursor-pointer
-      hover:border-indigo-500 hover:shadow-2xl hover:shadow-indigo-100/40 transition-all duration-500"
+      className="bg-white border rounded-xl p-6 flex items-center justify-between
+      hover:shadow-lg hover:border-indigo-500 transition cursor-pointer"
     >
-      {/* SAVE BUTTON */}
-      <button
-        onClick={(e) => onSaveToggle(job._id, e)}
-        className="absolute top-6 right-6 p-2 rounded-xl bg-white border border-slate-200
-        hover:bg-indigo-50 transition"
-      >
-        <Bookmark
-          size={18}
-          className={
-            isSaved
-              ? "fill-indigo-600 text-indigo-600"
-              : "text-slate-400"
-          }
-        />
-      </button>
 
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-        {/* LEFT */}
-        <div className="flex flex-1 items-center gap-6">
-          <div className="w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 p-2 flex items-center justify-center">
-            {company.logo ? (
-              <img
-                src={company.logo}
-                alt="logo"
-                className="max-h-full max-w-full object-contain"
-              />
-            ) : (
-              <span className="font-black text-slate-300 text-2xl">
-                {company.name?.[0] || "?"}
-              </span>
-            )}
-          </div>
+      {/* LEFT */}
 
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {company.name || "Company"}
+      <div className="flex items-center gap-4">
+
+        <div className="w-14 h-14 rounded-lg bg-slate-100 flex items-center justify-center">
+
+          {company.logo ? (
+
+            <img
+              src={company.logo}
+              className="max-h-full object-contain"
+            />
+
+          ) : (
+
+            <span className="font-semibold text-slate-500">
+              {company.name?.[0] || "?"}
             </span>
 
-            <h3 className="text-xl font-black text-slate-900">
-              {job.title || "Untitled Role"}
-            </h3>
-          </div>
+          )}
+
         </div>
 
-        {/* CENTER */}
-        <div className="flex gap-10">
-          <div>
-            <MapPin size={12} />
-            <p className="text-xs font-black">{job.location || "—"}</p>
-          </div>
+        <div>
 
-          <div>
-            <Clock size={12} />
-            <p className="text-xs font-black">{job.jobType || "—"}</p>
-          </div>
+          <p className="text-sm font-medium text-slate-900">
+            {job.title || "Untitled Role"}
+          </p>
 
-          <div>
-            <Briefcase size={12} />
-            <p className="text-xs font-black">
-              {job.experience || 0}+ Yrs
-            </p>
-          </div>
+          <p className="text-xs text-slate-500">
+            {company.name || "Company"}
+          </p>
+
+          {/* MATCHED SKILLS */}
+
+          {matchedSkills.length > 0 && (
+
+            <div className="flex gap-2 mt-2 flex-wrap">
+
+              {matchedSkills.slice(0,3).map(skill => (
+
+                <span
+                  key={skill}
+                  className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded"
+                >
+                  {skill}
+                </span>
+
+              ))}
+
+            </div>
+
+          )}
+
         </div>
 
-        {/* RIGHT */}
-        <ArrowRight size={20} />
       </div>
+
+      {/* CENTER */}
+
+      <div className="hidden md:flex items-center gap-8 text-sm text-slate-500">
+
+        <div className="flex items-center gap-1">
+          <MapPin size={14}/>
+          {job.location || "—"}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Clock size={14}/>
+          {job.jobType || "—"}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Briefcase size={14}/>
+          {job.experience || 0}+ yrs
+        </div>
+
+      </div>
+
+      {/* RIGHT */}
+
+      <div className="flex items-center gap-4">
+
+        <button
+          onClick={(e) => onSaveToggle(job._id, e)}
+          className="text-slate-400 hover:text-indigo-600"
+        >
+          <Bookmark
+            size={18}
+            className={isSaved ? "fill-indigo-600 text-indigo-600" : ""}
+          />
+        </button>
+
+        <ArrowRight size={18} className="text-slate-400"/>
+
+      </div>
+
     </div>
+
   );
 }

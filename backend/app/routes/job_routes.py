@@ -14,9 +14,6 @@ def create_job():
     user_id = get_jwt_identity()
     data = request.json
 
-    # ==============================
-    # GET COMPANY OF RECRUITER
-    # ==============================
 
     company = mongo.db.companies.find_one(
         {"ownerId": ObjectId(user_id)}
@@ -25,10 +22,6 @@ def create_job():
     if not company:
         return {"error": "Company not found. Create company first."}, 400
 
-
-    # ==============================
-    # CREATE JOB
-    # ==============================
 
     job = {
         "title": data.get("title"),
@@ -48,19 +41,10 @@ def create_job():
 
     job_id = result.inserted_id
 
-
-    # ==================================
-    # FIND USERS FOLLOWING THIS COMPANY
-    # ==================================
-
     followers = mongo.db.company_followers.find({
         "companyId": company["_id"]
     })
 
-
-    # ==================================
-    # CREATE NOTIFICATION FOR EACH USER
-    # ==================================
 
     for follower in followers:
 
@@ -80,10 +64,6 @@ def create_job():
         except Exception as e:
             print("Notification error:", e)
 
-
-    # ==================================
-    # RESPONSE
-    # ==================================
 
     return {"message": "Job created successfully"}, 201
 

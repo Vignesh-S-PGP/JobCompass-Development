@@ -24,7 +24,7 @@ import ApplicationDetail from "../pages/jobseeker/ApplicationDetail"
 import ChatPage from "../pages/chat/ChatPage"
 import ApplicantProfile from "../pages/recruiter/ApplicantProfile"; 
 import SavedJobs from "../pages/jobseeker/SavedJobs";
-
+import SearchCandidates from "../pages/recruiter/SearchCandidates"
 import AdminLayout from "../components/layout/AdminLayout"
 import AdminDashboard from "../pages/admin/Dashboard"
 import UserManagement from "../pages/admin/UserManagement"
@@ -34,6 +34,7 @@ import RecruiterJobDetails from "../pages/recruiter/JobDetails"
 import RecruiterEditJob from "../pages/recruiter/EditJob"
 import Companies from "../pages/jobseeker/Companies";
 import CompanyProfile from "../pages/jobseeker/CompanyProfile";
+import SearchResults from "../pages/jobseeker/SearchResults";
 
 export default function AppRoutes() {
   return (
@@ -50,7 +51,10 @@ export default function AppRoutes() {
       {/* Job Seeker */}
 <Route element={<ProtectedRoute role="job_seeker" />}>
   <Route path="/jobseeker" element={<JobSeekerLayout />}>
-
+    <Route
+path="search"
+element={<SearchResults />}
+/>
     <Route path="dashboard" element={<JobSeekerDashboard />} />
     <Route path="resumes" element={<Resumes />} />
     <Route path="profile" element={<JobSeekerProfile />} />
@@ -63,6 +67,7 @@ export default function AppRoutes() {
     <Route path="chat/:conversationId" element={<ChatPage />} />
     <Route path="companies" element={<Companies />} />
 <Route path="companies/:companyId" element={<CompanyProfile />} />
+
   </Route>
 </Route>
 
@@ -74,13 +79,13 @@ export default function AppRoutes() {
     <Route path="dashboard" element={<RecruiterDashboard />} />
     <Route path="profile" element={<RecruiterProfile />} />
     <Route path="company" element={<Company />} />
-
+    <Route path="search" element={<SearchCandidates />} />
     <Route path="jobs" element={<RecruiterJobs />} />
     <Route path="jobs/create" element={<CreateJob />} />
     <Route path="jobs/:jobId" element={<RecruiterJobDetails />} />
     <Route path="jobs/:jobId/edit" element={<RecruiterEditJob />} />
     <Route path="jobs/:jobId/applicants" element={<Applicants />} />
-
+    <Route path="candidates/:userId" element={<ApplicantProfile />} />
     <Route path="applicants/:applicationId/profile" element={<ApplicantProfile />} />
     <Route path="chat" element={<ChatPage />} />
     <Route path="chat/:conversationId" element={<ChatPage />} />

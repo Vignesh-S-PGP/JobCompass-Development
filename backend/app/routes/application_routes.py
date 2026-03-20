@@ -164,6 +164,7 @@ def get_applicants(job_id):
             {"_id": a["userId"]},
             {"passwordHash": 0}
         )
+        user_name=mongo.db.jobseeker_profiles.find_one({"userId": a["userId"]})
         resume = mongo.db.resumes.find_one({"_id": a["resumeId"]})
 
         result.append({
@@ -172,6 +173,7 @@ def get_applicants(job_id):
             "atsScore": a.get("atsScore", 0),
             "ats": a.get("ats", {}),
             "user": user,
+            "user_name":user_name.get("fullName"),
             "resume": {
     "_id": str(resume["_id"]),
     "filename": resume.get("filename"),

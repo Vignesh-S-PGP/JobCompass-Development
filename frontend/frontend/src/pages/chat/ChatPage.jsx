@@ -8,11 +8,13 @@ import {
   MessageSquare,
   Loader2,
   Check,
-  CheckCheck
+  CheckCheck,
+  Search
 } from "lucide-react";
 import { roleBasePath } from "../../utils/rolePath";
 
-/* ---------- TIME FORMAT ---------- */
+/* TIME FORMAT */
+
 const formatTime = (date) => {
   if (!date) return "";
   const d = new Date(date);
@@ -20,208 +22,309 @@ const formatTime = (date) => {
 };
 
 export default function ChatPage() {
+
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const user = getUserFromToken();
 
-  const [conversations, setConversations] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [text, setText] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [conversations,setConversations] = useState([]);
+  const [messages,setMessages] = useState([]);
+  const [text,setText] = useState("");
+  const [loading,setLoading] = useState(true);
+  const [search,setSearch] = useState("");
 
   const messagesEndRef = useRef(null);
 
   const activeConversation = conversations.find(c => c._id === conversationId);
   const activeUser = activeConversation?.participant;
 
-  /* ---------- LOAD CONVERSATIONS ---------- */
-  useEffect(() => {
+  /* LOAD CONVERSATIONS */
+
+  useEffect(()=>{
+
     socketService.connect();
 
     api.get("/chat/my")
-      .then(res => {
+      .then(res=>{
         setConversations(res.data.conversations || []);
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(()=>setLoading(false));
 
-  /* ---------- LOAD MESSAGES ---------- */
-  useEffect(() => {
-    if (!conversationId) return;
+  },[]);
+
+  /* LOAD MESSAGES */
+
+  useEffect(()=>{
+
+    if(!conversationId) return;
 
     api.get(`/chat/${conversationId}/messages`)
       .then(res => setMessages(res.data.messages || []));
 
     socketService.joinConversation(conversationId);
 
-    const onMessage = (msg) => {
-      if (msg.conversationId !== conversationId) return;
+    const onMessage = (msg)=>{
+
+      if(msg.conversationId !== conversationId) return;
+
       setMessages(prev =>
-        prev.some(m => m._id === msg._id) ? prev : [...prev, msg]
+        prev.some(m=>m._id===msg._id)
+          ? prev
+          : [...prev,msg]
       );
+
     };
 
     socketService.onNewMessage(onMessage);
 
-    return () => {
+    return ()=>{
+
       socketService.leaveConversation(conversationId);
       socketService.offNewMessage(onMessage);
+
     };
-  }, [conversationId]);
 
-  /* ---------- AUTOSCROLL ---------- */
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  },[conversationId]);
 
-  /* ---------- SEND MESSAGE ---------- */
-  const sendMessage = async () => {
-    if (!text.trim()) return;
+  /* AUTOSCROLL */
+
+  useEffect(()=>{
+    messagesEndRef.current?.scrollIntoView({behavior:"smooth"});
+  },[messages]);
+
+  /* SEND MESSAGE */
+
+  const sendMessage = async()=>{
+
+    if(!text.trim()) return;
 
     const optimistic = {
-      _id: `tmp-${Date.now()}`,
-      senderId: user.sub,
+      _id:`tmp-${Date.now()}`,
+      senderId:user.sub,
       text,
-      createdAt: new Date().toISOString(),
-      readAt: null
+      createdAt:new Date().toISOString(),
+      readAt:null
     };
 
-    setMessages(prev => [...prev, optimistic]);
+    setMessages(prev=>[...prev,optimistic]);
     setText("");
 
-    await api.post(`/chat/${conversationId}/messages`, { text });
+    await api.post(`/chat/${conversationId}/messages`,{text});
+
   };
 
-  if (loading) {
-    return (
+  if(loading){
+    return(
       <div className="h-full flex items-center justify-center">
-        <Loader2 className="animate-spin text-indigo-600" size={40} />
+        <Loader2 className="animate-spin text-indigo-600" size={40}/>
       </div>
     );
   }
 
-  return (
-    <div className="h-[calc(100vh-120px)] flex bg-white border rounded-3xl overflow-hidden">
+  const filteredConversations = conversations.filter(c =>
+    c.participant.name.toLowerCase().includes(search.toLowerCase())
+  );
 
-      {/* INBOX */}
-      <Inbox
-        conversations={conversations}
-        user={user}
-        navigate={navigate}
-        activeId={conversationId}
-      />
+  return(
 
-      {/* CHAT */}
+    <div className="h-[calc(100vh-120px)] flex bg-white border rounded-2xl overflow-hidden">
+
+      {/* SIDEBAR */}
+
+      <div className="w-80 border-r flex flex-col">
+
+        {/* HEADER */}
+
+        <div className="p-5 border-b flex items-center gap-2 font-semibold text-slate-800">
+          <MessageSquare size={18}/>
+          Messages
+        </div>
+
+        {/* SEARCH */}
+
+        <div className="p-4 border-b">
+
+          <div className="flex items-center bg-slate-100 rounded-lg px-3 py-2">
+
+            <Search size={16} className="text-slate-400"/>
+
+            <input
+              value={search}
+              onChange={e=>setSearch(e.target.value)}
+              placeholder="Search conversations"
+              className="ml-2 bg-transparent outline-none text-sm w-full"
+            />
+
+          </div>
+
+        </div>
+
+        {/* CONVERSATION LIST */}
+
+        <div className="flex-1 overflow-y-auto">
+
+          {filteredConversations.map(c => (
+
+            <div
+              key={c._id}
+              onClick={()=>navigate(`${roleBasePath[user.role]}/chat/${c._id}`)}
+              className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition
+              ${conversationId===c._id
+                ? "bg-indigo-50"
+                : "hover:bg-slate-50"}`}
+            >
+
+              <img
+                src={c.participant.profileImage || "/avatar.png"}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+
+              <div className="flex-1 overflow-hidden">
+
+                <p className="text-sm font-medium truncate">
+                  {c.participant.name}
+                </p>
+
+                <p className="text-xs text-slate-400 truncate">
+                  {c.lastMessage || "No messages yet"}
+                </p>
+
+              </div>
+
+              {c.unreadCount>0 && (
+
+                <span className="bg-indigo-600 text-white text-xs px-2 rounded-full">
+                  {c.unreadCount}
+                </span>
+
+              )}
+
+            </div>
+
+          ))}
+
+        </div>
+
+      </div>
+
+
+      {/* CHAT SECTION */}
+
       <div className="flex-1 flex flex-col">
 
         {/* HEADER */}
+
         {activeUser && (
-          <div
-            className="flex items-center gap-3 p-4 border-b cursor-pointer"
-            onClick={() =>
-              navigate(`${roleBasePath[user.role]}/profile/${activeUser._id}`)
-            }
-          >
+
+          <div className="flex items-center gap-3 px-6 py-4 border-b">
+
             <img
               src={activeUser.profileImage || "/avatar.png"}
-              className="w-10 h-10 rounded-full object-cover"
+              className="w-10 h-10 rounded-full"
             />
+
             <div>
-              <p className="font-semibold">{activeUser.name}</p>
-              <p className="text-xs text-slate-400">{activeUser.role}</p>
+
+              <p className="font-medium">
+                {activeUser.name}
+              </p>
+
+              <p className="text-xs text-slate-400">
+                {activeUser.role}
+              </p>
+
             </div>
+
           </div>
+
         )}
 
+
         {/* MESSAGES */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50">
-          {messages.map((m, i) => {
-            const mine = m.senderId === user.sub;
-            return (
-              <div key={i} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
+
+          {messages.map((m,i)=>{
+
+            const mine = m.senderId===user.sub;
+
+            return(
+
+              <div
+                key={i}
+                className={`flex ${mine?"justify-end":"justify-start"}`}
+              >
+
                 <div className="max-w-[70%]">
-                  <div className={`px-4 py-2 rounded-2xl text-sm ${
-                    mine ? "bg-indigo-600 text-white" : "bg-white border"
-                  }`}>
+
+                  <div
+                    className={`px-4 py-2 rounded-2xl text-sm
+                    ${mine
+                      ?"bg-indigo-600 text-white"
+                      :"bg-white border"}`}
+                  >
+
                     {m.text}
+
                   </div>
 
-                  <div className={`flex items-center gap-1 text-[10px] mt-1 ${
-                    mine ? "justify-end text-slate-500 font-medium" : "text-slate-400"
-                  }`}>
+                  <div
+                    className={`flex items-center gap-1 text-[10px] mt-1
+                    ${mine
+                      ?"justify-end text-slate-500"
+                      :"text-slate-400"}`}
+                  >
+
                     <span>{formatTime(m.createdAt)}</span>
-                    {mine && (m.readAt ? <CheckCheck size={14} /> : <Check size={12} />)}
+
+                    {mine && (
+                      m.readAt
+                        ? <CheckCheck size={12}/>
+                        : <Check size={12}/>
+                    )}
+
                   </div>
+
                 </div>
+
               </div>
+
             );
+
           })}
-          <div ref={messagesEndRef} />
+
+          <div ref={messagesEndRef}/>
+
         </div>
 
-        {/* INPUT */}
-        <div className="p-4 border-t flex gap-2">
+
+        {/* MESSAGE INPUT */}
+
+        <div className="border-t p-4 flex gap-3">
+
           <input
             value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && sendMessage()}
-            className="flex-1 border rounded-xl px-4 py-2"
-            placeholder="Type a message"
+            onChange={e=>setText(e.target.value)}
+            onKeyDown={e=>e.key==="Enter" && sendMessage()}
+            placeholder="Type your message..."
+            className="flex-1 border rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200"
           />
-          <button onClick={sendMessage} className="bg-indigo-600 text-white px-4 rounded-xl">
-            <Send size={16} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
-/* ---------- INBOX ---------- */
-function Inbox({ conversations, user, navigate, activeId }) {
-  return (
-    <div className="w-80 border-r bg-slate-50">
-      <div className="p-6 border-b font-black text-lg flex gap-2">
-        <MessageSquare className="text-indigo-600" /> Inbox
-      </div>
-
-      <div className="p-4 space-y-2 overflow-y-auto">
-        {conversations.map(c => (
-          <div
-            key={c._id}
-            onClick={() => navigate(`${roleBasePath[user.role]}/chat/${c._id}`)}
-            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer ${
-              activeId === c._id ? "bg-white shadow border" : "hover:bg-white"
-            }`}
+          <button
+            onClick={sendMessage}
+            className="bg-indigo-600 text-white px-4 rounded-xl flex items-center justify-center hover:bg-indigo-700 transition"
           >
-            <img
-              src={c.participant.profileImage || "/avatar.png"}
-              className="w-10 h-10 rounded-full object-cover"
-            />
 
-            <div className="flex-1 overflow-hidden">
-              <p className="font-semibold text-sm truncate">
-                {c.participant.name}
-              </p>
-              <p className="text-xs text-slate-400 truncate">
-                {c.lastMessage || "No messages yet"}
-              </p>
-            </div>
+            <Send size={16}/>
 
-            <div className="flex flex-col items-end gap-1">
-              <span className="text-[10px] text-slate-400">
-                {formatTime(c.lastMessageAt)}
-              </span>
+          </button>
 
-              {c.unreadCount > 0 && (
-                <span className="bg-indigo-600 text-white text-[10px] px-2 rounded-full">
-                  {c.unreadCount}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
+        </div>
+
       </div>
+
     </div>
+
   );
+
 }

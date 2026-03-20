@@ -57,3 +57,40 @@ def view_applicant_profile(application_id):
     except Exception as e:
         print("Applicant profile error:", e)
         return {"error": "Server error"}, 500
+
+@applicant_profile_bp.route("/user/<user_id>/profile", methods=["GET"])
+@jwt_required()
+@role_required("recruiter")
+def view_candidate_profile(user_id):
+    try:
+
+        # user
+        user = mongo.db.users.find_one(
+            {"_id": ObjectId(user_id)},
+            {"email": 1}
+        )
+
+        if not user:
+            return {"error": "User not found"}, 404
+
+        # jobseeker profile
+        profile = mongo.db.jobseeker_profiles.find_one(
+            {"userId": ObjectId(user_id)},
+            {"_id": 0}
+        )
+
+        if not profile:
+            return {"error": "Profile not found"}, 404
+
+        return {
+            "profile": profile,
+            "email": user.get("email"),
+            "applicationId": None,
+            "ats": {},
+            "atsScore": None,
+            "resume": None
+        }, 200
+
+    except Exception as e:
+        print("Candidate profile error:", e)
+        return {"error": "Server error"}, 500

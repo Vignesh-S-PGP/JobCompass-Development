@@ -1,157 +1,387 @@
-import { useState, useEffect } from "react";
-import { Outlet, useNavigate, NavLink, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react"
+import { Outlet, useNavigate, NavLink } from "react-router-dom"
+
 import {
   LayoutDashboard,
   Briefcase,
   Building2,
+  MessageSquare,
+  UserCircle,
   ChevronRight,
   LogOut,
-  UserCircle,
-  MessageSquare,
-} from "lucide-react";
-import api from "../../services/api";
-import logo from "../../assets/logo.png";
-import NotificationBell from "../notifications/NotificationBell";
+  Search,
+  Settings
+} from "lucide-react"
+
+import logo from "../../assets/logo.png"
+import NotificationBell from "../notifications/NotificationBell"
+import api from "../../services/api"
 
 export default function RecruiterLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    api.get("/companies/my")
-      .then(res => {
-        if (!res.data.company && location.pathname !== "/recruiter/company") {
-          navigate("/recruiter/company");
-        }
-      })
-      .catch(() => {
-        navigate("/login");
-      })
-      .finally(() => setLoading(false));
-  }, [navigate, location.pathname]);
+  const navigate = useNavigate()
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
+  const [isCollapsed,setIsCollapsed] = useState(false)
+  const [profileOpen,setProfileOpen] = useState(false)
 
-  const menuItems = [
-    { name: "Dashboard", path: "/recruiter/dashboard", icon: <LayoutDashboard size={20} /> },
-    { name: "Jobs", path: "/recruiter/jobs", icon: <Briefcase size={20} /> },
-    { name: "Company", path: "/recruiter/company", icon: <Building2 size={20} /> },
+  const [profile,setProfile] = useState(null)
 
-    { name: "Profile", path: "/recruiter/profile", icon: <UserCircle size={20} /> },
+  const [search,setSearch] = useState("")
+  const [results,setResults] = useState([])
+  const [searchOpen,setSearchOpen] = useState(false)
+  const [query,setQuery] = useState("")
+const [suggest,setSuggest] = useState([])
+const [showSuggest,setShowSuggest] = useState(false)
+useEffect(()=>{
 
-    { name: "Messages", path: "/recruiter/chat", icon: <MessageSquare size={20} /> },
-
-  ];
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-600 font-medium animate-pulse">Initializing Recruiter Portal...</p>
-        </div>
-      </div>
-    );
+  if(!search){
+    setResults([])
+    return
   }
 
+  const timer = setTimeout(()=>{
+
+    api.get(`/search/candidates?q=${search}`)
+      .then(res=>{
+        setResults(res.data.candidates || [])
+        setSearchOpen(true)
+      })
+      .catch(()=>setResults([]))
+
+  },300)
+
+  return ()=>clearTimeout(timer)
+
+},[search])
+
+  /* LOAD PROFILE */
+
+  useEffect(()=>{
+
+    api.get("/profile/me")
+      .then(res=>setProfile(res.data))
+      .catch(()=>setProfile(null))
+
+  },[])
+
+
+  /* SEARCH JOB SEEKERS */
+
+  
+  /* LOGOUT */
+
+  const handleLogout = ()=>{
+    localStorage.removeItem("token")
+    navigate("/login")
+  }
+
+
+  const menuItems = [
+
+    {
+      name:"Dashboard",
+      path:"/recruiter/dashboard",
+      icon:<LayoutDashboard size={20}/>
+    },
+
+    {
+      name:"Jobs",
+      path:"/recruiter/jobs",
+      icon:<Briefcase size={20}/>
+    },
+
+    {
+      name:"Company",
+      path:"/recruiter/company",
+      icon:<Building2 size={20}/>
+    },
+
+    {
+      name:"Profile",
+      path:"/recruiter/profile",
+      icon:<UserCircle size={20}/>
+    }
+  ]
+
+
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
-      {/* Sidebar Container */}
-      <aside 
-        className={`relative flex flex-col bg-[#0B0F1A] text-white transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] z-30
+
+    <div className="flex h-screen bg-slate-100 overflow-hidden">
+
+      {/* SIDEBAR */}
+
+      <aside
+        className={`relative flex flex-col bg-[#0B0F1A] text-white transition-all duration-300
         ${isCollapsed ? "w-20" : "w-64"}`}
       >
-        {/* Branding Area */}
-        <div className="flex items-center h-20 px-6 border-b border-white/5 mb-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center shrink-0">
-               <img src={logo} alt="Logo" className="w-full h-full object-contain" />
-            </div>
-            {!isCollapsed && (
-              <div className="flex flex-col">
-                <span className="text-lg font-bold tracking-tight text-white leading-none">
-                  JobCompass
-                </span>
-                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mt-1">
-                  Recruiter
-                </span>
-              </div>
-            )}
-          </div>
+
+        {/* LOGO */}
+
+        <div className="flex items-center h-20 px-6 border-b border-white/5">
+
+          <img src={logo} className="w-10 h-10"/>
+
+          {!isCollapsed && (
+
+            <span className="ml-3 text-xl font-bold tracking-wide">
+              JobCompass
+            </span>
+
+          )}
+
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto custom-scrollbar">
-          {menuItems.map((item) => (
+
+        {/* MENU */}
+
+        <nav className="flex-1 px-3 mt-6 space-y-1">
+
+          {menuItems.map(item=>(
+
             <NavLink
               key={item.path}
               to={item.path}
-              className={({ isActive }) => `
-                relative flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 group
-                ${isActive 
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/20" 
-                  : "text-slate-400 hover:bg-white/5 hover:text-white"}
-              `}
+              className={({isActive})=>
+                `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200
+                ${isActive
+                  ? "bg-indigo-600 text-white shadow-lg"
+                  : "text-slate-400 hover:bg-white/5 hover:text-white"}`
+              }
             >
-              <div className="shrink-0 transition-transform group-hover:scale-110">
-                {item.icon}
-              </div>
-              {!isCollapsed && (
-                <span className="text-sm font-semibold tracking-wide whitespace-nowrap">
-                  {item.name}
-                </span>
-              )}
-              
-              {/* Active Indicator Bar */}
-              <div className={`absolute inset-y-3 left-0 w-1 bg-white rounded-r-full transition-opacity
-                ${location.pathname === item.path ? "opacity-100" : "opacity-0"}`} 
-              />
+
+              {item.icon}
+
+              {!isCollapsed && item.name}
+
             </NavLink>
+
           ))}
+
         </nav>
 
-        {/* Bottom Section: Logout & Notifications */}
-        <div className="p-4 mt-auto border-t border-white/5 space-y-2">
-          {!isCollapsed && (
-            <div className="flex items-center justify-between px-4 py-2 bg-white/5 rounded-xl">
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Notifications</span>
-               <NotificationBell className="text-white" />
-            </div>
-          )}
 
-          <button
-            onClick={handleLogout}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all
-            ${isCollapsed 
-              ? "text-slate-400 hover:text-rose-500 justify-center" 
-              : "bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white w-full"}`}
-          >
-            <LogOut size={18} className="shrink-0" />
-            {!isCollapsed && <span className="text-xs font-bold uppercase tracking-wider">Logout</span>}
-          </button>
-        </div>
+        {/* COLLAPSE BUTTON */}
 
-        {/* Industrial Handle Toggle */}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-20 bg-[#0B0F1A] border-y border-r border-white/10 rounded-r-xl flex items-center justify-center text-slate-500 hover:text-white hover:bg-indigo-600 transition-all z-50 group shadow-xl"
+          onClick={()=>setIsCollapsed(!isCollapsed)}
+          className="absolute -right-3 top-1/2 bg-[#0B0F1A] border border-white/10
+          rounded-full p-1 shadow-md hover:scale-110 transition"
         >
-          <ChevronRight 
-            size={14} 
-            className={`transition-transform duration-500 ${isCollapsed ? "" : "rotate-180"}`} 
+
+          <ChevronRight
+            className={`transition-transform duration-300
+            ${!isCollapsed ? "rotate-180" : ""}`}
           />
+
         </button>
+
       </aside>
 
-      {/* Main Content Area - Restored p-6 */}
-      <main className="flex-1 overflow-y-auto p-6 bg-slate-50">
-        <Outlet />
-      </main>
+
+
+      {/* MAIN AREA */}
+
+      <div className="flex flex-col flex-1 overflow-hidden">
+
+
+        {/* NAVBAR */}
+
+        <header className="h-16 bg-[#0B0F1A] border-b border-white/5 flex items-center justify-between px-8">
+
+          {/* LEFT */}
+
+          <div className="flex items-center gap-6">
+
+            {/* WELCOME */}
+
+            <div className="text-sm text-slate-300 font-medium">
+
+              Welcome, <span className="text-white">
+                {profile?.fullName || "Recruiter"}
+              </span>
+
+            </div>
+
+
+            {/* SEARCH JOB SEEKERS */}
+
+            <div className="relative hidden md:flex items-center bg-white/5 rounded-xl px-4 py-2 w-80">
+
+              <Search size={18} className="text-slate-400 mr-2"/>
+
+             <input
+value={search}
+onChange={(e)=>setSearch(e.target.value)}
+onKeyDown={(e)=>{
+  if(e.key === "Enter"){
+    navigate(`/recruiter/search?q=${search}`)
+    setSearchOpen(false)
+  }
+}}
+type="text"
+placeholder="Search job seekers..."
+className="bg-transparent outline-none w-full text-sm text-white placeholder-slate-400"
+/>
+
+
+              {/* SEARCH RESULTS */}
+
+             {searchOpen && results.length > 0 && (
+
+<div className="absolute top-12 left-0 w-full bg-[#11162A] border border-white/10 rounded-xl shadow-lg overflow-hidden">
+
+{results.map(user => (
+
+<div
+key={user._id}
+onClick={()=>{
+  navigate(`/recruiter/candidates/${user.userId}`)
+  setSearchOpen(false)
+}}
+className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer"
+>
+
+<img
+src={user.profileImage || "/avatar.png"}
+className="w-8 h-8 rounded-full object-cover"
+/>
+
+<div>
+
+<p className="text-sm text-white font-semibold">
+{user.fullName}
+</p>
+
+<p className="text-xs text-slate-400">
+{user.headline}
+</p>
+
+</div>
+
+</div>
+
+))}
+
+</div>
+
+)}
+
+            </div>
+
+          </div>
+
+
+
+          {/* RIGHT */}
+
+          <div className="flex items-center gap-6">
+
+            {/* MESSAGE */}
+
+            <button
+              onClick={()=>navigate("/recruiter/chat")}
+              className="p-2 rounded-lg hover:bg-white/10 transition"
+            >
+
+              <MessageSquare size={22} className="text-slate-300"/>
+
+            </button>
+
+
+            {/* NOTIFICATIONS */}
+
+            <NotificationBell/>
+
+
+            {/* PROFILE */}
+
+            <div className="relative">
+
+              <button
+                onClick={()=>setProfileOpen(!profileOpen)}
+                className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center overflow-hidden"
+              >
+
+                {profile?.profileImage
+
+                  ? <img src={profile.profileImage} className="w-full h-full object-cover"/>
+
+                  : <span className="text-white font-semibold">
+                      {profile?.fullName?.[0] || "R"}
+                    </span>
+
+                }
+
+              </button>
+
+
+              {/* DROPDOWN */}
+
+              {profileOpen && (
+
+                <div className="absolute right-0 mt-4 w-56 bg-[#11162A] border border-white/10 rounded-xl shadow-lg overflow-hidden">
+
+                  <div className="p-4 border-b border-white/10">
+
+                    <p className="text-sm font-semibold text-white">
+                      {profile?.fullName || "Recruiter"}
+                    </p>
+
+                    <p className="text-xs text-slate-400 truncate">
+                      {profile?.email}
+                    </p>
+
+                  </div>
+
+
+                  <button
+                    onClick={()=>{
+                      setProfileOpen(false)
+                      navigate("/recruiter/profile")
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-white/5"
+                  >
+
+                    <Settings size={16}/>
+                    Settings
+
+                  </button>
+
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10"
+                  >
+
+                    <LogOut size={16}/>
+                    Logout
+
+                  </button>
+
+                </div>
+
+              )}
+
+            </div>
+
+          </div>
+
+        </header>
+
+
+
+        {/* PAGE CONTENT */}
+
+        <main className="flex-1 overflow-y-auto p-6 bg-slate-50">
+
+          <Outlet/>
+
+        </main>
+
+      </div>
+
     </div>
-  );
+
+  )
+
 }

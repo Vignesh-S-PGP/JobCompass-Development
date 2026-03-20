@@ -1,47 +1,41 @@
 import { Bell, Circle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
-
 import socketService from "../../services/socket";
 
-// import { socket } from "../../services/socket";
-
-
 export default function NotificationBell({ className = "" }) {
+  const navigate = useNavigate();
+
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
-useEffect(() => {
-  loadNotifications();
+  useEffect(() => {
+    loadNotifications();
 
-  // Connect socket (singleton-safe)
-  socketService.connect();
+    socketService.connect();
 
-  // Listen for notifications
-  socketService.onNotification((notif) => {
-    setNotifications(prev => [notif, ...prev]);
-  });
+    socketService.onNotification((notif) => {
+      setNotifications(prev => [notif, ...prev]);
+    });
 
-  // Cleanup
-  return () => {
-    // no-op or optional cleanup if you add off handlers later
-  };
-}, []);
+  }, []);
 
   const loadNotifications = () => {
     api.get("/notifications")
       .then(res => setNotifications(res.data.notifications || []))
-      .catch(err => console.error("❌ Notification load failed", err));
+      .catch(err => console.error("Notification load failed", err));
   };
 
   const markAsRead = async (id) => {
     try {
       await api.patch(`/notifications/${id}/read`);
+
       setNotifications(prev =>
         prev.map(n => n._id === id ? { ...n, isRead: true } : n)
       );
     } catch (err) {
-      console.error("❌ Failed to mark read", err);
+      console.error("Failed to mark read", err);
     }
   };
 
@@ -49,55 +43,103 @@ useEffect(() => {
 
   return (
     <div className={`relative ${className}`}>
+
+      {/* BELL BUTTON */}
       <button
         onClick={() => setOpen(!open)}
-        className={`relative transition-colors
-          ${unreadCount > 0 ? "text-indigo-500" : "text-slate-400"}
-          hover:text-indigo-400`}
+        className="relative p-2 rounded-lg hover:bg-white/10 transition"
       >
-        <Bell size={18} />
+        <Bell size={22} className="text-slate-300" />
+
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full" />
+          <span className="absolute -top-1 -right-1 flex items-center justify-center
+          min-w-[16px] h-[16px] text-[10px] font-bold text-white
+          bg-rose-500 rounded-full px-1">
+            {unreadCount}
+          </span>
         )}
       </button>
 
+      {/* DROPDOWN */}
       {open && (
-        <div className="absolute bottom-full mb-4 right-0 w-80 bg-[#11162A] border border-white/10 rounded-[24px] shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="px-6 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Notifications</span>
-            {unreadCount > 0 && <span className="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full">{unreadCount} New</span>}
+        <div className="absolute right-0 mt-4 w-96
+        bg-[#11162A] border border-white/10
+        rounded-2xl shadow-2xl z-50
+        overflow-hidden
+        animate-in fade-in slide-in-from-top-2 duration-200">
+
+          {/* HEADER */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+            <h3 className="text-sm font-semibold text-white">
+              Notifications
+            </h3>
+
+            {unreadCount > 0 && (
+              <span className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full">
+                {unreadCount} new
+              </span>
+            )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto">
+          {/* LIST */}
+          <div className="max-h-96 overflow-y-auto">
+
             {notifications.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">All caught up</p>
+              <div className="p-10 text-center">
+                <p className="text-sm text-slate-400">
+                  You're all caught up
+                </p>
               </div>
             ) : (
+
               notifications.map(n => (
                 <button
                   key={n._id}
-                  onClick={()=>{
-   markAsRead(n._id)
+                  onClick={() => {
 
-   if(n.meta?.jobId){
-      navigate("/jobs",{
-        state:{ openJobId: n.meta.jobId }
-      })
-   }
-}}
-                  className={`w-full text-left px-6 py-4 transition-all hover:bg-white/5 border-b border-white/5 flex gap-3
-                    ${n.isRead ? "opacity-60" : "bg-indigo-500/5"}`}
+                    markAsRead(n._id);
+
+                    if (n.meta?.jobId) {
+                      navigate("/jobseeker/jobs", {
+                        state: { openJobId: n.meta.jobId }
+                      });
+                    }
+                  }}
+
+                  className={`w-full text-left px-5 py-4 border-b border-white/5
+                  flex gap-3 hover:bg-white/5 transition
+                  ${!n.isRead ? "bg-indigo-500/5" : ""}`}
                 >
-                  {!n.isRead && <Circle size={8} fill="#4f46e5" className="text-indigo-600 mt-1 flex-shrink-0" />}
-                  <div>
-                    <p className="font-black text-sm text-white leading-tight mb-1">{n.title}</p>
-                    <p className="text-xs font-bold text-slate-400 leading-relaxed">{n.message}</p>
+
+                  {/* UNREAD DOT */}
+                  {!n.isRead && (
+                    <Circle
+                      size={8}
+                      fill="#6366f1"
+                      className="text-indigo-500 mt-2 flex-shrink-0"
+                    />
+                  )}
+
+                  {/* CONTENT */}
+                  <div className="flex-1">
+
+                    <p className="text-sm font-medium text-white leading-tight">
+                      {n.title}
+                    </p>
+
+                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                      {n.message}
+                    </p>
+
                   </div>
+
                 </button>
               ))
+
             )}
+
           </div>
+
         </div>
       )}
     </div>

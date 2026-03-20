@@ -13,111 +13,130 @@ import ATSBreakdown from "../../components/applications/ATSBreakdown";
 import ResumePreview from "../../components/applications/ResumePreview";
 
 export default function ApplicationDetail() {
+
   const { id } = useParams();
   const navigate = useNavigate();
-  const [app, setApp] = useState(null);
-  console.log("data:",app);
+  const [app,setApp] = useState(null);
 
-  useEffect(() => {
-    api.get(`/applications/${id}`).then((res) => setApp(res.data.application));
-  }, [id]);
+  useEffect(()=>{
+    api.get(`/applications/${id}`)
+      .then(res=>setApp(res.data.application));
+  },[id]);
 
-  if (!app) {
-    return (
-      <div className="p-10 font-mono text-xs text-slate-400">
-        LOADING_SYSTEM_DATA...
+  if(!app){
+    return(
+      <div className="flex items-center justify-center h-64 text-sm text-slate-400">
+        Loading application data...
       </div>
     );
   }
 
   const statusStyle = {
-    shortlisted: "bg-emerald-500 text-white",
-    rejected: "bg-rose-500 text-white",
-    applied: "bg-indigo-500 text-white",
-    pending: "bg-amber-500 text-white",
+    shortlisted:"bg-emerald-100 text-emerald-700",
+    rejected:"bg-rose-100 text-rose-600",
+    applied:"bg-indigo-100 text-indigo-600",
+    pending:"bg-amber-100 text-amber-600"
   };
 
-  return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
+  return(
 
-      {/* TOP NAV */}
-      <div className="flex justify-between items-center">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-bold text-[11px] uppercase tracking-[0.2em]"
-        >
-          <ArrowLeft size={14} /> Back
-        </button>
-      </div>
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
-      {/* HEADER CARD */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-8 flex flex-col md:flex-row justify-between gap-6">
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-xl border bg-slate-50 flex items-center justify-center p-3">
-              {app.company?.logo ? (
-                <img src={app.company.logo} alt="logo" className="max-h-full" />
-              ) : (
-                <Building2 className="text-slate-300" />
-              )}
-            </div>
+      {/* BACK */}
 
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 uppercase">
-                {app.job?.title}
-              </h1>
-              <div className="flex items-center gap-4 mt-1">
-                <span className="text-indigo-600 font-bold text-sm">
-                  {app.company?.name}
-                </span>
-                <span className="text-slate-300">|</span>
-                <span className="flex items-center gap-1 text-xs font-bold text-slate-500 uppercase">
-                  <MapPin size={12} /> {app.job.location}
-                </span>
-              </div>
-            </div>
+      <button
+        onClick={()=>navigate(-1)}
+        className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900"
+      >
+        <ArrowLeft size={18}/>
+        Back
+      </button>
+
+
+      {/* HEADER */}
+
+      <div className="bg-white border rounded-xl p-6 flex items-start justify-between">
+
+        <div className="flex items-center gap-4">
+
+          <div className="w-14 h-14 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
+
+            {app.company?.logo
+              ? <img src={app.company.logo} className="w-full h-full object-contain"/>
+              : <Building2 className="text-slate-400"/>}
+
           </div>
 
-          <div
-            className={`${statusStyle[app.status] || statusStyle.pending}
-              px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] self-start`}
-          >
-            {app.status}
+          <div>
+
+            <h1 className="text-xl font-semibold text-slate-900">
+              {app.job?.title}
+            </h1>
+
+            <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
+
+              <span className="flex items-center gap-1">
+                <Building2 size={14}/>
+                {app.company?.name}
+              </span>
+
+              <span className="flex items-center gap-1">
+                <MapPin size={14}/>
+                {app.job?.location}
+              </span>
+
+            </div>
+
           </div>
+
         </div>
+
+        <span className={`px-3 py-1 rounded-md text-xs font-medium ${statusStyle[app.status]}`}>
+          {app.status}
+        </span>
+
       </div>
 
-      {/* MAIN GRID */}
+
+      {/* CONTENT GRID */}
+
       <div className="grid lg:grid-cols-3 gap-8">
 
-        {/* LEFT – JOB + ATS */}
+        {/* LEFT */}
+
         <div className="lg:col-span-2 space-y-6">
 
           {/* JOB DESCRIPTION */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="px-6 py-3 border-b bg-slate-50 flex items-center gap-2">
-              <div className="w-1 h-3 bg-indigo-600 rounded-full" />
-              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                Job Specification
-              </h2>
-            </div>
-            <div className="p-6">
-              <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
-                {app.job?.description}
-              </p>
-            </div>
+
+          <div className="bg-white border rounded-xl p-6">
+
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">
+              Job Description
+            </h2>
+
+            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
+              {app.job?.description}
+            </p>
+
           </div>
 
-          {/* ATS – UNCHANGED */}
+
+          {/* ATS REPORT */}
+
           <ATSBreakdown ats={app.ats} score={app.atsScore} />
+
         </div>
 
-        {/* RIGHT – COMPANY + META + RESUME */}
+
+        {/* RIGHT */}
+
         <div className="space-y-6">
 
-          {/* COMPANY OVERVIEW */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">
+          {/* COMPANY */}
+
+          <div className="bg-white border rounded-xl p-6">
+
+            <h3 className="text-sm font-semibold text-slate-900 mb-3">
               Company Overview
             </h3>
 
@@ -126,54 +145,75 @@ export default function ApplicationDetail() {
             </p>
 
             {app.company?.website && (
+
               <a
                 href={app.company.website}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 hover:underline"
+                className="flex items-center gap-1 text-indigo-600 text-sm"
               >
-                <Globe size={14} /> Visit Website
+                <Globe size={14}/>
+                Visit Website
               </a>
+
             )}
+
           </div>
 
-          {/* RESUME – UNCHANGED */}
+
+          {/* RESUME */}
+
           <ResumePreview resume={app.resume} />
 
-          {/* METADATA */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="px-6 py-3 border-b bg-slate-50 flex items-center gap-2">
-              <div className="w-1 h-3 bg-indigo-600 rounded-full" />
-              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                Metadata
-              </h2>
+
+          {/* META */}
+
+          <div className="bg-white border rounded-xl p-6 space-y-4">
+
+            <h3 className="text-sm font-semibold text-slate-900">
+              Application Details
+            </h3>
+
+            <div className="flex justify-between text-sm">
+
+              <span className="text-slate-400">
+                Job Type
+              </span>
+
+              <span className="flex items-center gap-1 text-slate-700">
+                <Briefcase size={14}/>
+                {app.job?.jobType}
+              </span>
+
             </div>
 
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400 font-bold uppercase">Type</span>
-                <span className="flex items-center gap-1.5 font-black text-slate-900">
-                  <Briefcase size={12} /> {app.job?.jobType}
-                </span>
-              </div>
+            <div className="flex justify-between text-sm">
 
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400 font-bold uppercase">Applied</span>
-                <span className="flex items-center gap-1.5 font-black text-slate-900">
-                  <Calendar size={12} />
-                  {app.appliedAt
-                    ? new Date(app.appliedAt).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </span>
-              </div>
+              <span className="text-slate-400">
+                Applied On
+              </span>
+
+              <span className="flex items-center gap-1 text-slate-700">
+                <Calendar size={14}/>
+                {app.appliedAt
+                  ? new Date(app.appliedAt).toLocaleDateString("en-GB",{
+                      day:"2-digit",
+                      month:"short",
+                      year:"numeric"
+                    })
+                  : "—"}
+              </span>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
+
   );
+
 }

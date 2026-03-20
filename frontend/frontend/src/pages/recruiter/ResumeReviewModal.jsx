@@ -1,123 +1,213 @@
-function ResumeReviewModal({ app, onClose }) {
-  const [pdfUrl, setPdfUrl] = useState(null)
-  const [error, setError] = useState(null)
+import { useEffect, useState } from "react"
+import api from "../../services/api"
 
-  useEffect(() => {
-    if (!app) return
+import {
+  X,
+  CheckCircle2,
+  AlertCircle
+} from "lucide-react"
+
+export default function ResumeReviewModal({ app, onClose, onUpdateStatus }) {
+
+  const [pdfUrl,setPdfUrl] = useState(null)
+  const [error,setError] = useState(null)
+
+  useEffect(()=>{
+
+    if(!app) return
 
     const resumeId =
-      app.resume?._id?.$oid || app.resume?._id
+      app.resume?._id?.$oid ||
+      app.resume?._id ||
+      app.resumeId
 
-    if (!resumeId) {
-      setError("Resume ID missing")
-      return
-    }
+    let url
 
-    let objectUrl = null
-
-    api.get(`/resumes/view/${resumeId}`, {
-      responseType: "blob",
-      timeout: 20000   // ⏱️ 20 seconds max
-    })
-      .then(res => {
-        const blob = new Blob([res.data], {
-          type: "application/pdf"
-        })
-        objectUrl = URL.createObjectURL(blob)
-        setPdfUrl(objectUrl)
+    api.get(`/resumes/view/${resumeId}`,{responseType:"blob"})
+      .then(res=>{
+        url = URL.createObjectURL(
+          new Blob([res.data],{type:"application/pdf"})
+        )
+        setPdfUrl(url)
       })
-      .catch(err => {
-        console.error("❌ Resume load failed:", err)
-        setError("Unable to load resume PDF")
+      .catch(()=>{
+        setError("Unable to load resume")
       })
 
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
-      setPdfUrl(null)
-      setError(null)
+    return ()=>{
+      if(url) URL.revokeObjectURL(url)
     }
-  }, [app])
 
-  if (!app) return null
+  },[app])
+
 
   const ats = app.ats || {}
   const matched = ats.matched_skills || []
   const missing = ats.missing_skills || []
 
-  return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex">
 
-      {/* LEFT — PDF VIEWER */}
-      <div className="w-3/5 bg-gray-100 p-4">
-        {error ? (
-          <div className="h-full flex items-center justify-center text-red-600">
-            {error}
-          </div>
-        ) : pdfUrl ? (
-          <iframe
-            src={pdfUrl}
-            className="w-full h-full rounded"
-            title="Resume"
-          />
-        ) : (
-          <div className="h-full flex items-center justify-center text-gray-500">
-            Loading resume…
-          </div>
-        )}
-      </div>
+  return(
 
-      {/* RIGHT — ATS DETAILS */}
-      <div className="w-2/5 bg-white p-6 overflow-y-auto">
-        <h2 className="text-xl font-bold mb-2">
-          ATS Evaluation
-        </h2>
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6">
 
-        <div className="text-4xl font-bold text-green-700 mb-4">
-          {app.atsScore}%
+      <div className="w-full max-w-7xl h-[90vh] bg-white rounded-2xl overflow-hidden flex shadow-2xl">
+
+        {/* PDF */}
+
+        <div className="flex-1 bg-slate-100">
+
+          {error
+            ? <div className="h-full flex items-center justify-center text-red-500">
+                {error}
+              </div>
+            : pdfUrl
+              ? <iframe src={pdfUrl} className="w-full h-full"/>
+              : <div className="h-full flex items-center justify-center text-slate-400">
+                  Loading resume…
+                </div>
+          }
+
         </div>
 
-        <section className="mb-4">
-          <h3 className="font-semibold mb-1">Matched Skills</h3>
-          {matched.length === 0 ? (
-            <p className="text-sm text-gray-500">None</p>
-          ) : (
-            <ul className="list-disc list-inside text-green-700 text-sm">
-              {matched.map((s, i) => <li key={i}>{s}</li>)}
-            </ul>
+
+        {/* ATS PANEL */}
+
+        <div className="w-[420px] border-l p-6 overflow-y-auto">
+
+          <div className="flex justify-between items-center mb-6">
+
+            <h2 className="font-bold text-lg">
+              ATS Evaluation
+            </h2>
+
+            <button onClick={onClose}>
+              <X/>
+            </button>
+
+          </div>
+
+
+          {/* SCORE */}
+
+          <div className="text-center mb-6">
+
+            <div className="text-5xl font-black text-indigo-600">
+              {app.atsScore}%
+            </div>
+
+            <p className="text-sm text-slate-500">
+              Match Score
+            </p>
+
+          </div>
+
+
+          {/* MATCHED */}
+
+          <div className="mb-6">
+
+            <div className="flex items-center gap-2 text-green-600 mb-2">
+              <CheckCircle2 size={16}/>
+              <strong>Matched Skills</strong>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+
+              {matched.map((s,i)=>(
+                <span
+                  key={i}
+                  className="px-3 py-1 bg-green-50 text-green-700 rounded text-xs font-bold"
+                >
+                  {s}
+                </span>
+              ))}
+
+            </div>
+
+          </div>
+
+
+          {/* MISSING */}
+
+          <div className="mb-6">
+
+            <div className="flex items-center gap-2 text-red-600 mb-2">
+              <AlertCircle size={16}/>
+              <strong>Missing Skills</strong>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+
+              {missing.map((s,i)=>(
+                <span
+                  key={i}
+                  className="px-3 py-1 bg-red-50 text-red-600 rounded text-xs font-bold"
+                >
+                  {s}
+                </span>
+              ))}
+
+            </div>
+
+          </div>
+
+
+          {/* SUMMARY */}
+
+          {ats.summary && (
+
+            <div className="bg-slate-50 border p-3 rounded text-sm mb-6">
+              {ats.summary}
+            </div>
+
           )}
-        </section>
 
-        <section className="mb-4">
-          <h3 className="font-semibold mb-1">Missing Skills</h3>
-          {missing.length === 0 ? (
-            <p className="text-sm text-gray-500">No major gaps</p>
-          ) : (
-            <ul className="list-disc list-inside text-red-600 text-sm">
-              {missing.map((s, i) => <li key={i}>{s}</li>)}
-            </ul>
-          )}
-        </section>
 
-        <p className="text-sm text-gray-600 mb-6">
-          {ats.reason}
-        </p>
+          {/* ACTION BUTTONS */}
 
-        <div className="flex gap-2">
-          <button className="flex-1 bg-green-600 text-white py-2 rounded">
-            Shortlist
+          <div className="flex gap-3">
+
+            <button
+              disabled={app.status==="shortlisted"}
+              onClick={()=>onUpdateStatus(app.applicationId,"shortlisted")}
+              className={`flex-1 py-3 rounded text-white font-bold
+                ${app.status==="shortlisted"
+                  ? "bg-green-300"
+                  : "bg-green-600 hover:bg-green-700"}
+              `}
+            >
+              Shortlist
+            </button>
+
+
+            <button
+              disabled={app.status==="rejected"}
+              onClick={()=>onUpdateStatus(app.applicationId,"rejected")}
+              className={`flex-1 py-3 rounded text-white font-bold
+                ${app.status==="rejected"
+                  ? "bg-red-300"
+                  : "bg-red-600 hover:bg-red-700"}
+              `}
+            >
+              Reject
+            </button>
+
+          </div>
+
+
+          <button
+            onClick={onClose}
+            className="mt-4 w-full border py-2 rounded"
+          >
+            Close
           </button>
-          <button className="flex-1 bg-red-600 text-white py-2 rounded">
-            Reject
-          </button>
+
         </div>
 
-        <button
-          onClick={onClose}
-          className="mt-4 w-full border py-2 rounded"
-        >
-          Close
-        </button>
       </div>
+
     </div>
+
   )
+
 }

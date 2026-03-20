@@ -1,15 +1,13 @@
 import {
   CheckCircle2,
   AlertCircle,
-  Zap,
-  ShieldCheck,
-  Activity,
-  ListChecks,
-  FileSearch,
-  Lightbulb
+  Sparkles,
+  Lightbulb,
+  Activity
 } from "lucide-react";
 
 export default function ATSBreakdown({ ats = {}, score = 0 }) {
+
   const {
     required_skills = [],
     resume_skills = [],
@@ -19,176 +17,251 @@ export default function ATSBreakdown({ ats = {}, score = 0 }) {
     recommendations = []
   } = ats;
 
+  const getScoreLabel = () => {
+    if (score >= 80) return "Excellent Match";
+    if (score >= 60) return "Strong Match";
+    if (score >= 40) return "Moderate Match";
+    return "Low Match";
+  };
+
   return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+
+    <div className="bg-white border rounded-2xl overflow-hidden">
 
       {/* HEADER */}
-      <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
+
+      <div className="flex items-center justify-between px-6 py-4 border-b bg-slate-50">
+
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-3.5 bg-indigo-600 rounded-sm" />
-          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-            ATS Evaluation
+
+          <Sparkles size={18} className="text-indigo-600"/>
+
+          <h2 className="text-sm font-semibold text-slate-900">
+            ATS Compatibility Report
           </h2>
+
         </div>
-        <div className="flex items-center gap-2 text-slate-400">
-          <Activity size={14} />
-          <span className="text-[9px] font-bold uppercase tracking-widest">
-            Live Analysis
-          </span>
+
+        <div className="flex items-center gap-2 text-slate-400 text-sm">
+
+          <Activity size={16}/>
+          AI Analysis
+
         </div>
+
       </div>
 
-      <div className="p-8 space-y-10">
 
-        {/* SCOREBOARD */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="flex items-center gap-6 bg-slate-50 p-4 rounded-xl border">
-            <div className="relative">
-              <svg className="w-20 h-20 -rotate-90">
-                <circle cx="40" cy="40" r="36" strokeWidth="6" className="text-slate-200" fill="none" />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
-                  strokeWidth="6"
-                  fill="none"
-                  strokeDasharray={226}
-                  strokeDashoffset={226 - (226 * score) / 100}
-                  strokeLinecap="round"
-                  className="text-indigo-600 transition-all"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xl font-black">{score}%</span>
-              </div>
-            </div>
+      <div className="p-6 space-y-8">
 
-            <div>
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                Match Quality
-              </p>
-              <p className="text-sm font-black uppercase italic">
-                {score >= 80 ? "Optimized" : score >= 50 ? "Moderate" : "Low"}
-              </p>
-            </div>
+        {/* SCORE */}
+
+        <div className="flex flex-col md:flex-row items-center gap-8">
+
+          <ScoreCircle score={score}/>
+
+          <div>
+
+            <p className="text-sm text-slate-400">
+              Resume Match Score
+            </p>
+
+            <h3 className="text-2xl font-semibold text-slate-900">
+              {getScoreLabel()}
+            </h3>
+
+            <p className="text-sm text-slate-500 mt-1">
+              This score represents how well your resume aligns with the job requirements.
+            </p>
+
           </div>
 
-          <Stat label="Required Skills" value={required_skills.length} />
-          <Stat label="Resume Skills" value={resume_skills.length} />
         </div>
 
+
         {/* SKILL COMPARISON */}
+
         <div className="grid md:grid-cols-2 gap-6">
-          <SkillBox
+
+          <SkillGroup
             title="Matched Skills"
-            icon={<CheckCircle2 size={16} />}
+            icon={<CheckCircle2 size={16}/>}
             color="emerald"
             items={matched_skills}
           />
-          <SkillBox
+
+          <SkillGroup
             title="Missing Skills"
-            icon={<AlertCircle size={16} />}
+            icon={<AlertCircle size={16}/>}
             color="rose"
             items={missing_skills}
           />
+
         </div>
 
-        {/* REQUIRED vs RESUME */}
+
+        {/* JOB VS RESUME */}
+
         <div className="grid md:grid-cols-2 gap-6">
-          <SkillBox
+
+          <SkillGroup
             title="Job Required Skills"
-            icon={<ListChecks size={16} />}
             items={required_skills}
           />
-          <SkillBox
-            title="Extracted Resume Skills"
-            icon={<FileSearch size={16} />}
+
+          <SkillGroup
+            title="Skills Detected in Resume"
             items={resume_skills}
           />
+
         </div>
 
+
         {/* SUMMARY */}
+
         {summary && (
-          <div className="bg-slate-50 border rounded-xl p-6 relative">
-            <div className="absolute top-4 right-4 opacity-10">
-              <ShieldCheck size={60} />
-            </div>
 
-            <div className="flex items-center gap-3 mb-4">
-              <Zap size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                ATS Summary
+          <div className="bg-slate-50 border rounded-xl p-5">
+
+            <div className="flex items-center gap-2 mb-2 text-indigo-600">
+
+              <Sparkles size={16}/>
+              <span className="font-medium">
+                AI Insight
               </span>
+
             </div>
 
-            <p className="text-slate-700 font-semibold leading-relaxed">
-              “{summary}”
+            <p className="text-sm text-slate-600">
+              {summary}
             </p>
+
           </div>
+
         )}
+
 
         {/* RECOMMENDATIONS */}
+
         {recommendations.length > 0 && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-4 text-indigo-600">
-              <Lightbulb size={16} />
-              <h4 className="text-[11px] font-black uppercase tracking-widest">
-                Improvement Suggestions
-              </h4>
+
+          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-5">
+
+            <div className="flex items-center gap-2 mb-3 text-indigo-600">
+
+              <Lightbulb size={16}/>
+              <span className="font-medium">
+                Recommendations
+              </span>
+
             </div>
 
-            <ul className="space-y-2 text-sm font-semibold text-slate-700">
-              {recommendations.map((r, i) => (
-                <li key={i} className="flex gap-2">
-                  <span className="text-indigo-500">•</span>
-                  {r}
-                </li>
+            <ul className="space-y-1 text-sm text-slate-700">
+
+              {recommendations.map((r,i)=>(
+                <li key={i}>• {r}</li>
               ))}
+
             </ul>
+
           </div>
+
         )}
+
       </div>
+
     </div>
+
   );
+
 }
 
-/* ---------- SMALL COMPONENTS ---------- */
 
-function Stat({ label, value }) {
+/* ---------- SCORE CIRCLE ---------- */
+
+function ScoreCircle({ score }) {
+
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+
   return (
-    <div className="bg-slate-50 border rounded-xl p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-        {label}
-      </p>
-      <p className="text-2xl font-black">{value}</p>
+
+    <div className="relative w-28 h-28">
+
+      <svg className="w-28 h-28 -rotate-90">
+
+        <circle
+          cx="56"
+          cy="56"
+          r={radius}
+          strokeWidth="8"
+          fill="none"
+          className="text-slate-200"
+        />
+
+        <circle
+          cx="56"
+          cy="56"
+          r={radius}
+          strokeWidth="8"
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="text-indigo-600"
+        />
+
+      </svg>
+
+      <div className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-slate-900">
+
+        {score}%
+
+      </div>
+
     </div>
+
   );
+
 }
 
-function SkillBox({ title, items = [], icon, color = "slate" }) {
+
+/* ---------- SKILL GROUP ---------- */
+
+function SkillGroup({ title, items = [], icon, color = "slate" }) {
+
   return (
-    <div className={`border rounded-xl p-6 hover:border-${color}-200`}>
-      <div className="flex items-center gap-2 mb-4 text-slate-400">
+
+    <div className="border rounded-xl p-4">
+
+      <div className="flex items-center gap-2 mb-3 text-slate-600">
+
         {icon}
-        <h4 className="text-[11px] font-black uppercase tracking-widest">
+
+        <span className="text-sm font-medium">
           {title}
-        </h4>
+        </span>
+
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {items.length === 0 ? (
-          <span className="text-xs italic text-slate-400">None</span>
-        ) : (
-          items.map((s, i) => (
-            <span
-              key={i}
-              className="px-3 py-1.5 bg-white border rounded-lg text-xs font-bold"
-            >
-              {s}
-            </span>
-          ))
-        )}
+
+        {items.length === 0
+          ? <span className="text-xs text-slate-400">None</span>
+          : items.map((s,i)=>(
+              <span
+                key={i}
+                className="bg-slate-100 text-xs px-2 py-1 rounded"
+              >
+                {s}
+              </span>
+            ))}
+
       </div>
+
     </div>
+
   );
+
 }
