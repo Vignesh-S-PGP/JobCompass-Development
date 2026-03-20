@@ -3,14 +3,14 @@ from openai import OpenAI
 import os
 
 # ---------------- CONFIG ----------------
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    raise RuntimeError("❌ GROQ_API_KEY not found. Did you load .env?")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "mock_key")
 
-client = OpenAI(
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1",
-)
+client = None
+if GROQ_API_KEY and GROQ_API_KEY != "mock_key":
+    client = OpenAI(
+        api_key=GROQ_API_KEY,
+        base_url="https://api.groq.com/openai/v1",
+    )
 
 MODEL = "llama-3.1-8b-instant"
 
@@ -52,6 +52,18 @@ RETURN JSON ONLY:
 """
 
     try:
+        if not client:
+            # Return mock data if no API key
+            return {
+                "required_skills": ["React", "Node.js"],
+                "resume_skills": ["React"],
+                "matched_skills": ["React"],
+                "missing_skills": ["Node.js"],
+                "score": 50,
+                "summary": "Mock ATS analysis (No GROQ_API_KEY).",
+                "recommendations": ["Add Node.js to your resume."]
+            }
+
         response = client.chat.completions.create(
             model=MODEL,
             messages=[

@@ -1,349 +1,190 @@
-import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import api from "../../services/api"
-import { Compass, ArrowRight, Eye, EyeOff, Briefcase, User } from "lucide-react"
-import { motion } from "framer-motion"
+import { useState } from "react";
+import api from "../../services/api";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Briefcase, User, Sparkles, ShieldCheck } from "lucide-react";
+import { Button, Input, Badge } from "../../components/ui";
+import { motion } from "framer-motion";
 
 export default function Register() {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "job_seeker"
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const navigate = useNavigate()
-
-  const [form,setForm] = useState({
-    email:"",
-    password:"",
-    confirmPassword:"",
-    role:"job_seeker"
-  })
-
-  const [showPwd,setShowPwd] = useState(false)
-  const [showConfirm,setShowConfirm] = useState(false)
-
-  const [error,setError] = useState("")
-  const [loading,setLoading] = useState(false)
-
-  const handleSubmit = async(e)=>{
-
-    e.preventDefault()
-
-    if(form.password !== form.confirmPassword){
-      return setError("Passwords do not match")
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      return setError("Passwords do not match");
     }
 
-    try{
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.post("/auth/register", formData);
+      localStorage.setItem("token", res.data.accessToken);
+      localStorage.setItem("role", res.data.role);
 
-      setLoading(true)
-
-      const res = await api.post("/auth/register",{
-        email: form.email,
-        password: form.password,
-        role: form.role
-      })
-
-      localStorage.setItem("token",res.data.accessToken)
-
-      navigate(
-        form.role === "recruiter"
-          ? "/recruiter/dashboard"
-          : "/jobseeker/dashboard"
-      )
-
+      if (res.data.role === "recruiter") navigate("/recruiter/dashboard");
+      else navigate("/jobseeker/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.error || "Registration failed");
+    } finally {
+      setLoading(false);
     }
-    catch(err){
-      setError(err.response?.data?.error || "Registration failed")
-    }
-    finally{
-      setLoading(false)
-    }
+  };
 
-  }
-
-
-  return(
-
-    <div className="min-h-screen flex bg-slate-50">
-
-      {/* LEFT SIDE */}
-
-      <div className="hidden lg:flex lg:w-1/2 items-center justify-center bg-slate-900 text-white relative overflow-hidden">
-
-        <div className="absolute inset-0 opacity-20">
-
-          <div className="absolute top-20 left-20 w-72 h-72 bg-indigo-500 rounded-full blur-3xl"/>
-
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500 rounded-full blur-3xl"/>
-
+  return (
+    <div className="min-h-screen flex items-stretch bg-background">
+      {/* LEFT SIDE - BRANDING */}
+      <div className="hidden lg:flex lg:w-1/2 bg-slate-900 p-12 flex-col justify-between relative overflow-hidden">
+        <div className="relative z-10">
+           <Link to="/" className="flex items-center gap-2 group">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                 <Briefcase size={20} className="text-white" />
+              </div>
+              <span className="text-2xl font-black text-white tracking-tighter">JobCompass.</span>
+           </Link>
         </div>
 
-        <motion.div
-          initial={{ opacity:0,y:20 }}
-          animate={{ opacity:1,y:0 }}
-          transition={{ duration:0.6 }}
-          className="relative z-10 max-w-md text-center px-8"
-        >
+        <div className="relative z-10 max-w-md">
+           <Badge variant="secondary" className="mb-6 bg-primary/20 text-primary border-none py-1 px-4 text-xs font-black uppercase tracking-widest">
+              <Sparkles size={14} className="mr-2" /> Start your journey
+           </Badge>
+           <h1 className="text-6xl font-black text-white tracking-tight leading-none mb-6">
+              Create your <span className="text-primary italic text-gradient">future</span> today.
+           </h1>
+           <p className="text-slate-400 text-lg font-medium leading-relaxed mb-10">
+              Set up your profile in minutes and get matched with companies looking for your exact skills.
+           </p>
 
-          <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center mx-auto mb-6">
+           <div className="space-y-6">
+              {[
+                { title: "Smart Matching", desc: "Our AI finds the best roles for you." },
+                { title: "Direct Contact", desc: "Chat with recruiters in real-time." },
+                { title: "ATS Optimization", desc: "Improve your resume ranking automatically." }
+              ].map((f, i) => (
+                <div key={i} className="flex gap-4 items-start">
+                   <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-1">
+                      <ShieldCheck size={14} className="text-primary" />
+                   </div>
+                   <div>
+                      <p className="text-white font-bold text-sm">{f.title}</p>
+                      <p className="text-slate-500 text-xs">{f.desc}</p>
+                   </div>
+                </div>
+              ))}
+           </div>
+        </div>
 
-            <Compass size={32}/>
+        <div className="relative z-10 pt-10 border-t border-white/5">
+           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Trusted by builders from</p>
+           <div className="flex gap-8 opacity-50 grayscale contrast-125">
+              <span className="text-white font-black text-xl tracking-tighter italic">Vercel</span>
+              <span className="text-white font-black text-xl tracking-tighter">LINEAR</span>
+              <span className="text-white font-black text-xl tracking-tighter">stripe</span>
+           </div>
+        </div>
 
-          </div>
-
-          <h2 className="text-3xl font-bold mb-4">
-            Start Your Journey
-          </h2>
-
-          <p className="text-slate-300 leading-relaxed text-sm">
-            Create your JobCompass account to discover opportunities,
-            optimize your resume with ATS insights, and connect directly
-            with recruiters.
-          </p>
-
-        </motion.div>
-
+        {/* Decor */}
+        <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/10 blur-[120px] rounded-full" />
       </div>
 
-
-      {/* RIGHT SIDE */}
-
-      <div className="flex-1 flex items-center justify-center p-6">
-
+      {/* RIGHT SIDE - FORM */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-16">
         <motion.div
-          initial={{ opacity:0,y:20 }}
-          animate={{ opacity:1,y:0 }}
-          transition={{ duration:0.4 }}
-          className="w-full max-w-md"
+           initial={{ opacity: 0, x: 20 }}
+           animate={{ opacity: 1, x: 0 }}
+           className="w-full max-w-md space-y-10"
         >
-
-          {/* MOBILE LOGO */}
-
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
-              <Compass size={20}/>
-            </div>
-
-            <span className="text-xl font-bold">
-              JobCompass
-            </span>
-
+          <div className="space-y-3">
+            <h2 className="text-4xl font-black tracking-tight text-foreground">Join JobCompass.</h2>
+            <p className="text-muted-foreground font-medium">Create your account to start your application journey.</p>
           </div>
-
-
-          {/* TITLE */}
-
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            Create your account
-          </h1>
-
-          <p className="text-slate-500 mb-8">
-            Join JobCompass in seconds
-          </p>
-
-
-          {/* ERROR */}
 
           {error && (
-
-            <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
-              {error}
+            <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 text-rose-500 text-sm font-bold animate-shake">
+               <div className="w-2 h-2 rounded-full bg-rose-500" /> {error}
             </div>
-
           )}
 
-
-          {/* FORM */}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* EMAIL */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Email
-              </label>
-
-              <input
-                type="email"
-                placeholder="you@example.com"
-                required
-                value={form.email}
-                onChange={(e)=>setForm({...form,email:e.target.value})}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
-
-            </div>
-
-
-            {/* PASSWORD */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Password
-              </label>
-
-              <div className="relative">
-
-                <input
-                  type={showPwd ? "text" : "password"}
+          <form onSubmit={handleRegister} className="space-y-6">
+            <div className="space-y-4">
+               <Input
+                  label="Email Address"
+                  type="email"
+                  placeholder="name@company.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={(e)=>setForm({...form,password:e.target.value})}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 pr-10 focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
+                  className="h-14 rounded-2xl bg-muted/40 border-none focus-visible:ring-primary/20 pl-4"
+               />
+               <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                    className="h-14 rounded-2xl bg-muted/40 border-none focus-visible:ring-primary/20 pl-4"
+                  />
+                  <Input
+                    label="Confirm"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    required
+                    className="h-14 rounded-2xl bg-muted/40 border-none focus-visible:ring-primary/20 pl-4"
+                  />
+               </div>
 
-                <button
-                  type="button"
-                  onClick={()=>setShowPwd(!showPwd)}
-                  className="absolute right-3 top-2.5 text-slate-400"
-                >
-                  {showPwd ? <EyeOff size={18}/> : <Eye size={18}/>}
-                </button>
-
-              </div>
-
+               <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground ml-0.5">I want to join as a</label>
+                  <div className="grid grid-cols-2 gap-3 p-1.5 bg-muted/40 rounded-[20px] border border-border/50">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: "job_seeker" })}
+                      className={`flex flex-col items-center justify-center p-4 rounded-[16px] transition-all ${
+                        formData.role === "job_seeker" ? "bg-background text-primary shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <User size={20} className="mb-1" />
+                      <span className="text-[10px] font-black uppercase tracking-widest leading-none">Job Seeker</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: "recruiter" })}
+                      className={`flex flex-col items-center justify-center p-4 rounded-[16px] transition-all ${
+                        formData.role === "recruiter" ? "bg-background text-primary shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Briefcase size={20} className="mb-1" />
+                      <span className="text-[10px] font-black uppercase tracking-widest leading-none">Recruiter</span>
+                    </button>
+                  </div>
+               </div>
             </div>
 
-
-            {/* CONFIRM PASSWORD */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Confirm Password
-              </label>
-
-              <div className="relative">
-
-                <input
-                  type={showConfirm ? "text" : "password"}
-                  required
-                  placeholder="••••••••"
-                  value={form.confirmPassword}
-                  onChange={(e)=>setForm({...form,confirmPassword:e.target.value})}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 pr-10 focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-
-                <button
-                  type="button"
-                  onClick={()=>setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-2.5 text-slate-400"
-                >
-                  {showConfirm ? <EyeOff size={18}/> : <Eye size={18}/>}
-                </button>
-
-              </div>
-
-            </div>
-
-
-            {/* ROLE SELECTOR */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-3">
-                I am a
-              </label>
-
-              <div className="grid grid-cols-2 gap-3">
-
-                {/* JOB SEEKER */}
-
-                <button
-                  type="button"
-                  onClick={()=>setForm({...form,role:"job_seeker"})}
-                  className={`border rounded-xl p-4 flex flex-col items-center gap-2 transition
-                    ${form.role==="job_seeker"
-                      ? "border-indigo-600 bg-indigo-50"
-                      : "border-slate-200 hover:border-indigo-400"
-                    }
-                  `}
-                >
-
-                  <User size={20} className="text-indigo-600"/>
-
-                  <span className="text-sm font-semibold">
-                    Job Seeker
-                  </span>
-
-                </button>
-
-
-                {/* RECRUITER */}
-
-                <button
-                  type="button"
-                  onClick={()=>setForm({...form,role:"recruiter"})}
-                  className={`border rounded-xl p-4 flex flex-col items-center gap-2 transition
-                    ${form.role==="recruiter"
-                      ? "border-indigo-600 bg-indigo-50"
-                      : "border-slate-200 hover:border-indigo-400"
-                    }
-                  `}
-                >
-
-                  <Briefcase size={20} className="text-indigo-600"/>
-
-                  <span className="text-sm font-semibold">
-                    Recruiter
-                  </span>
-
-                </button>
-
-              </div>
-
-            </div>
-
-
-            {/* BUTTON */}
-
-            <button
-              disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition"
+            <Button
+               type="submit"
+               className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20"
+               isLoading={loading}
             >
-
-              {loading ? (
-
-                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
-
-              ) : (
-
-                <>
-                  Create Account
-                  <ArrowRight size={16}/>
-                </>
-
-              )}
-
-            </button>
-
+              Create Account <ArrowRight size={18} className="ml-2" />
+            </Button>
           </form>
 
-
-          {/* LOGIN */}
-
-          <p className="text-center text-sm text-slate-500 mt-6">
-
-            Already have an account?{" "}
-
-            <Link
-              to="/login"
-              className="font-semibold text-indigo-600 hover:underline"
-            >
-
-              Login
-
-            </Link>
-
+          <p className="text-center text-sm font-bold text-muted-foreground">
+            Already have an account? <Link to="/login" className="text-primary hover:underline ml-1">Log in</Link>
           </p>
-
         </motion.div>
-
       </div>
-
     </div>
-
-  )
-
+  );
 }

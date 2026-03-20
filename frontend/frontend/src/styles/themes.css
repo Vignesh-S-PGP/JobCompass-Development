@@ -1,0 +1,107 @@
+:root {
+  /* Default - Indigo Professional */
+  --primary: 79 70 229; /* indigo-600 */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 67 56 202;
+  --ring: 79 70 229;
+}
+
+[data-theme='emerald'] {
+  --primary: 16 185 129; /* emerald-500 */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 5 150 105;
+  --ring: 16 185 129;
+}
+
+[data-theme='blue'] {
+  --primary: 37 99 235; /* blue-600 */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 29 78 216;
+  --ring: 37 99 235;
+}
+
+[data-theme='purple'] {
+  --primary: 147 51 234; /* purple-600 */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 126 34 206;
+  --ring: 147 51 234;
+}
+
+[data-theme='orange'] {
+  --primary: 249 115 22; /* orange-500 */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 234 88 12;
+  --ring: 249 115 22;
+}
+
+[data-theme='teal'] {
+  --primary: 20 184 166; /* teal-500 */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 13 148 136;
+  --ring: 20 184 166;
+}
+
+[data-theme='neon'] {
+  --primary: 168 85 247; /* purple-500 */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 192 132 252;
+  --ring: 168 85 247;
+}
+
+[data-theme='rose'] {
+  --primary: 225 29 72; /* rose-600 */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 190 18 60;
+  --ring: 225 29 72;
+}
+
+[data-theme='slate'] {
+  --primary: 71 85 105; /* slate-600 */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 51 65 85;
+  --ring: 71 85 105;
+}
+
+[data-theme='gradient'] {
+  --primary: 124 58 237; /* custom violet */
+  --primary-foreground: 255 255 255;
+  --primary-hover: 109 40 217;
+  --ring: 124 58 237;
+}
+
+/* Base Tones - Light Mode */
+:root {
+  --background: 255 255 255;
+  --foreground: 15 23 42;
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
+  --popover: 255 255 255;
+  --popover-foreground: 15 23 42;
+  --muted: 241 245 249;
+  --muted-foreground: 100 116 139;
+  --accent: 241 245 249;
+  --accent-foreground: 15 23 42;
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
+  --border: 226 232 240;
+  --input: 226 232 240;
+  --radius: 0.75rem;
+}
+
+/* Base Tones - Dark Mode */
+.dark {
+  --background: 11 15 26;
+  --foreground: 248 250 252;
+  --card: 17 22 39;
+  --card-foreground: 248 250 252;
+  --popover: 17 22 39;
+  --popover-foreground: 248 250 252;
+  --muted: 30 41 59;
+  --muted-foreground: 148 163 184;
+  --accent: 30 41 59;
+  --accent-foreground: 248 250 252;
+  --destructive: 153 27 27;
+  --destructive-foreground: 248 250 252;
+  --border: 30 41 59;
+  --input: 30 41 59;
+}

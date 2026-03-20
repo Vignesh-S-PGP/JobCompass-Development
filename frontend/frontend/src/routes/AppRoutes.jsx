@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom"
+import { Routes, Route, Navigate, useLocation } from "react-router-dom"
+import { AnimatePresence, motion } from "framer-motion"
 
 import Login from "../pages/auth/Login"
 import Register from "../pages/auth/Register"
@@ -15,7 +16,7 @@ import JobSeekerProfile from "../pages/jobseeker/Profile"
 import RecruiterLayout from "../components/layout/RecruiterLayout"
 import RecruiterDashboard from "../pages/recruiter/Dashboard"
 import CreateJob from "../pages/recruiter/CreateJob"
-import RecruiterJobs from "../pages/recruiter/Jobs"   // ✅ ONLY THIS
+import RecruiterJobs from "../pages/recruiter/Jobs"
 import RecruiterProfile from "../pages/recruiter/Profile"
 import Company from "../pages/recruiter/Company"
 import Applicants from "../pages/recruiter/Applicants"
@@ -36,87 +37,83 @@ import Companies from "../pages/jobseeker/Companies";
 import CompanyProfile from "../pages/jobseeker/CompanyProfile";
 import SearchResults from "../pages/jobseeker/SearchResults";
 
+const PageTransition = ({ children }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.3, ease: "easeInOut" }}
+    className="h-full"
+  >
+    {children}
+  </motion.div>
+);
+
 export default function AppRoutes() {
+  const location = useLocation();
+
   return (
-    <Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
 
-      {/* Public */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Public */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
+        <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+        <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
 
-      {/* Job Seeker */}
-      {/* Job Seeker */}
-<Route element={<ProtectedRoute role="job_seeker" />}>
-  <Route path="/jobseeker" element={<JobSeekerLayout />}>
-    <Route
-path="search"
-element={<SearchResults />}
-/>
-    <Route path="dashboard" element={<JobSeekerDashboard />} />
-    <Route path="resumes" element={<Resumes />} />
-    <Route path="profile" element={<JobSeekerProfile />} />
-    <Route path="jobs" element={<Jobs />} />
-    <Route path="saved" element={<SavedJobs />} />
-    {/* ✅ Applied Jobs */}
-    <Route path="applications" element={<AppliedJobs />} />
-    <Route path="applications/:id" element={<ApplicationDetail />} />
-    <Route path="chat" element={<ChatPage />} />
-    <Route path="chat/:conversationId" element={<ChatPage />} />
-    <Route path="companies" element={<Companies />} />
-<Route path="companies/:companyId" element={<CompanyProfile />} />
-
-  </Route>
-</Route>
-
-
-      {/* Recruiter */}
-     <Route element={<ProtectedRoute role="recruiter" />}>
-  <Route path="/recruiter" element={<RecruiterLayout />}>
-
-    <Route path="dashboard" element={<RecruiterDashboard />} />
-    <Route path="profile" element={<RecruiterProfile />} />
-    <Route path="company" element={<Company />} />
-    <Route path="search" element={<SearchCandidates />} />
-    <Route path="jobs" element={<RecruiterJobs />} />
-    <Route path="jobs/create" element={<CreateJob />} />
-    <Route path="jobs/:jobId" element={<RecruiterJobDetails />} />
-    <Route path="jobs/:jobId/edit" element={<RecruiterEditJob />} />
-    <Route path="jobs/:jobId/applicants" element={<Applicants />} />
-    <Route path="candidates/:userId" element={<ApplicantProfile />} />
-    <Route path="applicants/:applicationId/profile" element={<ApplicantProfile />} />
-    <Route path="chat" element={<ChatPage />} />
-    <Route path="chat/:conversationId" element={<ChatPage />} />
-
-  </Route>
-</Route>
-
-      {/* Admin */}
-      <Route element={<ProtectedRoute role="admin" />}>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<UserManagement />} />
-          <Route path="jobs" element={<JobManagement />} />
+        {/* Job Seeker */}
+        <Route element={<ProtectedRoute role="job_seeker" />}>
+          <Route path="/jobseeker" element={<JobSeekerLayout />}>
+            <Route path="search" element={<PageTransition><SearchResults /></PageTransition>} />
+            <Route path="dashboard" element={<PageTransition><JobSeekerDashboard /></PageTransition>} />
+            <Route path="resumes" element={<PageTransition><Resumes /></PageTransition>} />
+            <Route path="profile" element={<PageTransition><JobSeekerProfile /></PageTransition>} />
+            <Route path="jobs" element={<PageTransition><Jobs /></PageTransition>} />
+            <Route path="saved" element={<PageTransition><SavedJobs /></PageTransition>} />
+            <Route path="applications" element={<PageTransition><AppliedJobs /></PageTransition>} />
+            <Route path="applications/:id" element={<PageTransition><ApplicationDetail /></PageTransition>} />
+            <Route path="chat" element={<PageTransition><ChatPage /></PageTransition>} />
+            <Route path="chat/:conversationId" element={<PageTransition><ChatPage /></PageTransition>} />
+            <Route path="companies" element={<PageTransition><Companies /></PageTransition>} />
+            <Route path="companies/:companyId" element={<PageTransition><CompanyProfile /></PageTransition>} />
+          </Route>
         </Route>
 
-      </Route>
-
-      {/* Admin */}
-      <Route element={<ProtectedRoute role="admin" />}>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<UserManagement />} />
-          <Route path="jobs" element={<JobManagement />} />
-          <Route path="ats" element={<ATSMonitoring />} />
+        {/* Recruiter */}
+        <Route element={<ProtectedRoute role="recruiter" />}>
+          <Route path="/recruiter" element={<RecruiterLayout />}>
+            <Route path="dashboard" element={<PageTransition><RecruiterDashboard /></PageTransition>} />
+            <Route path="profile" element={<PageTransition><RecruiterProfile /></PageTransition>} />
+            <Route path="company" element={<PageTransition><Company /></PageTransition>} />
+            <Route path="search" element={<PageTransition><SearchCandidates /></PageTransition>} />
+            <Route path="jobs" element={<PageTransition><RecruiterJobs /></PageTransition>} />
+            <Route path="jobs/create" element={<PageTransition><CreateJob /></PageTransition>} />
+            <Route path="jobs/:jobId" element={<PageTransition><RecruiterJobDetails /></PageTransition>} />
+            <Route path="jobs/:jobId/edit" element={<PageTransition><RecruiterEditJob /></PageTransition>} />
+            <Route path="jobs/:jobId/applicants" element={<PageTransition><Applicants /></PageTransition>} />
+            <Route path="candidates/:userId" element={<PageTransition><ApplicantProfile /></PageTransition>} />
+            <Route path="applicants/:applicationId/profile" element={<PageTransition><ApplicantProfile /></PageTransition>} />
+            <Route path="chat" element={<PageTransition><ChatPage /></PageTransition>} />
+            <Route path="chat/:conversationId" element={<PageTransition><ChatPage /></PageTransition>} />
+          </Route>
         </Route>
 
-      </Route>
+        {/* Admin */}
+        <Route element={<ProtectedRoute role="admin" />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<PageTransition><AdminDashboard /></PageTransition>} />
+            <Route path="users" element={<PageTransition><UserManagement /></PageTransition>} />
+            <Route path="jobs" element={<PageTransition><JobManagement /></PageTransition>} />
+            <Route path="ats" element={<PageTransition><ATSMonitoring /></PageTransition>} />
+          </Route>
+        </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
 
-    </Routes>
+      </Routes>
+    </AnimatePresence>
   )
 }
