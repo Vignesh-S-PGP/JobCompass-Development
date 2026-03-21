@@ -1,349 +1,174 @@
-import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import api from "../../services/api"
-import { Compass, ArrowRight, Eye, EyeOff, Briefcase, User } from "lucide-react"
-import { motion } from "framer-motion"
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { User, Mail, Lock, Eye, EyeOff, Briefcase, UserCircle, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import api from "../../services/api";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../../components/ui/Card";
+import AuthLayout from "./AuthLayout";
 
 export default function Register() {
+  const navigate = useNavigate();
+  const [role, setRole] = useState("job_seeker");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const navigate = useNavigate()
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  const [form,setForm] = useState({
-    email:"",
-    password:"",
-    confirmPassword:"",
-    role:"job_seeker"
-  })
-
-  const [showPwd,setShowPwd] = useState(false)
-  const [showConfirm,setShowConfirm] = useState(false)
-
-  const [error,setError] = useState("")
-  const [loading,setLoading] = useState(false)
-
-  const handleSubmit = async(e)=>{
-
-    e.preventDefault()
-
-    if(form.password !== form.confirmPassword){
-      return setError("Passwords do not match")
+    try {
+      await api.post("/auth/register", { fullName, email, password, role });
+      navigate("/login");
+    } catch (err) {
+      setError(err.response?.data?.error || "Registration failed");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    try{
-
-      setLoading(true)
-
-      const res = await api.post("/auth/register",{
-        email: form.email,
-        password: form.password,
-        role: form.role
-      })
-
-      localStorage.setItem("token",res.data.accessToken)
-
-      navigate(
-        form.role === "recruiter"
-          ? "/recruiter/dashboard"
-          : "/jobseeker/dashboard"
-      )
-
-    }
-    catch(err){
-      setError(err.response?.data?.error || "Registration failed")
-    }
-    finally{
-      setLoading(false)
-    }
-
-  }
-
-
-  return(
-
-    <div className="min-h-screen flex bg-slate-50">
-
-      {/* LEFT SIDE */}
-
-      <div className="hidden lg:flex lg:w-1/2 items-center justify-center bg-slate-900 text-white relative overflow-hidden">
-
-        <div className="absolute inset-0 opacity-20">
-
-          <div className="absolute top-20 left-20 w-72 h-72 bg-indigo-500 rounded-full blur-3xl"/>
-
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500 rounded-full blur-3xl"/>
-
+  return (
+    <AuthLayout>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="text-center mb-8 lg:text-left">
+          <motion.div
+            initial={{ y: -20 }}
+            animate={{ y: 0 }}
+            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 mb-4"
+          >
+            <UserCircle size={24} />
+          </motion.div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Create an Account</h1>
+          <p className="text-muted-foreground mt-2">Join JobCompass to start your career journey</p>
         </div>
 
-        <motion.div
-          initial={{ opacity:0,y:20 }}
-          animate={{ opacity:1,y:0 }}
-          transition={{ duration:0.6 }}
-          className="relative z-10 max-w-md text-center px-8"
-        >
-
-          <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center mx-auto mb-6">
-
-            <Compass size={32}/>
-
-          </div>
-
-          <h2 className="text-3xl font-bold mb-4">
-            Start Your Journey
-          </h2>
-
-          <p className="text-slate-300 leading-relaxed text-sm">
-            Create your JobCompass account to discover opportunities,
-            optimize your resume with ATS insights, and connect directly
-            with recruiters.
-          </p>
-
-        </motion.div>
-
-      </div>
-
-
-      {/* RIGHT SIDE */}
-
-      <div className="flex-1 flex items-center justify-center p-6">
-
-        <motion.div
-          initial={{ opacity:0,y:20 }}
-          animate={{ opacity:1,y:0 }}
-          transition={{ duration:0.4 }}
-          className="w-full max-w-md"
-        >
-
-          {/* MOBILE LOGO */}
-
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
-              <Compass size={20}/>
-            </div>
-
-            <span className="text-xl font-bold">
-              JobCompass
-            </span>
-
-          </div>
-
-
-          {/* TITLE */}
-
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            Create your account
-          </h1>
-
-          <p className="text-slate-500 mb-8">
-            Join JobCompass in seconds
-          </p>
-
-
-          {/* ERROR */}
-
-          {error && (
-
-            <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
-              {error}
-            </div>
-
-          )}
-
-
-          {/* FORM */}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* EMAIL */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Email
-              </label>
-
-              <input
-                type="email"
-                placeholder="you@example.com"
-                required
-                value={form.email}
-                onChange={(e)=>setForm({...form,email:e.target.value})}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
-
-            </div>
-
-
-            {/* PASSWORD */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Password
-              </label>
-
-              <div className="relative">
-
-                <input
-                  type={showPwd ? "text" : "password"}
-                  required
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={(e)=>setForm({...form,password:e.target.value})}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 pr-10 focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-
-                <button
-                  type="button"
-                  onClick={()=>setShowPwd(!showPwd)}
-                  className="absolute right-3 top-2.5 text-slate-400"
+        <Card className="border-border/50 shadow-xl backdrop-blur-sm bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-xl">Sign Up</CardTitle>
+            <CardDescription>Enter your details below to create your account</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleRegister} className="space-y-4">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm"
                 >
-                  {showPwd ? <EyeOff size={18}/> : <Eye size={18}/>}
-                </button>
-
-              </div>
-
-            </div>
-
-
-            {/* CONFIRM PASSWORD */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Confirm Password
-              </label>
-
-              <div className="relative">
-
-                <input
-                  type={showConfirm ? "text" : "password"}
-                  required
-                  placeholder="••••••••"
-                  value={form.confirmPassword}
-                  onChange={(e)=>setForm({...form,confirmPassword:e.target.value})}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 pr-10 focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-
-                <button
-                  type="button"
-                  onClick={()=>setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-2.5 text-slate-400"
-                >
-                  {showConfirm ? <EyeOff size={18}/> : <Eye size={18}/>}
-                </button>
-
-              </div>
-
-            </div>
-
-
-            {/* ROLE SELECTOR */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-3">
-                I am a
-              </label>
-
-              <div className="grid grid-cols-2 gap-3">
-
-                {/* JOB SEEKER */}
-
-                <button
-                  type="button"
-                  onClick={()=>setForm({...form,role:"job_seeker"})}
-                  className={`border rounded-xl p-4 flex flex-col items-center gap-2 transition
-                    ${form.role==="job_seeker"
-                      ? "border-indigo-600 bg-indigo-50"
-                      : "border-slate-200 hover:border-indigo-400"
-                    }
-                  `}
-                >
-
-                  <User size={20} className="text-indigo-600"/>
-
-                  <span className="text-sm font-semibold">
-                    Job Seeker
-                  </span>
-
-                </button>
-
-
-                {/* RECRUITER */}
-
-                <button
-                  type="button"
-                  onClick={()=>setForm({...form,role:"recruiter"})}
-                  className={`border rounded-xl p-4 flex flex-col items-center gap-2 transition
-                    ${form.role==="recruiter"
-                      ? "border-indigo-600 bg-indigo-50"
-                      : "border-slate-200 hover:border-indigo-400"
-                    }
-                  `}
-                >
-
-                  <Briefcase size={20} className="text-indigo-600"/>
-
-                  <span className="text-sm font-semibold">
-                    Recruiter
-                  </span>
-
-                </button>
-
-              </div>
-
-            </div>
-
-
-            {/* BUTTON */}
-
-            <button
-              disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition"
-            >
-
-              {loading ? (
-
-                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
-
-              ) : (
-
-                <>
-                  Create Account
-                  <ArrowRight size={16}/>
-                </>
-
+                  {error}
+                </motion.div>
               )}
 
-            </button>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setRole("job_seeker")}
+                  className={`
+                    flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200
+                    ${role === "job_seeker"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border/50 text-muted-foreground hover:bg-muted"}
+                  `}
+                >
+                  <UserCircle size={20} />
+                  <span className="text-xs font-semibold">Job Seeker</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("recruiter")}
+                  className={`
+                    flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200
+                    ${role === "recruiter"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border/50 text-muted-foreground hover:bg-muted"}
+                  `}
+                >
+                  <Briefcase size={20} />
+                  <span className="text-xs font-semibold">Recruiter</span>
+                </button>
+              </div>
 
-          </form>
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <Input
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
 
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <Input
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
 
-          {/* LOGIN */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
 
-          <p className="text-center text-sm text-slate-500 mt-6">
-
-            Already have an account?{" "}
-
-            <Link
-              to="/login"
-              className="font-semibold text-indigo-600 hover:underline"
-            >
-
-              Login
-
-            </Link>
-
-          </p>
-
-        </motion.div>
-
-      </div>
-
-    </div>
-
-  )
-
+              <Button
+                type="submit"
+                className="w-full h-11 mt-4"
+                isLoading={loading}
+              >
+                Create Account
+                <ArrowRight size={18} className="ml-2" />
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col border-t border-border/50 pt-6">
+            <p className="text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link to="/login" className="text-primary font-semibold hover:underline underline-offset-4">
+                Login
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    </AuthLayout>
+  );
 }

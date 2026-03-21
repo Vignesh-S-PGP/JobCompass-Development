@@ -1,306 +1,143 @@
-import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import api from "../../services/api"
-import { getUserFromToken } from "../../utils/auth"
-import { Compass, ArrowRight, Eye, EyeOff } from "lucide-react"
-import { motion } from "framer-motion"
-import { GoogleLogin } from "@react-oauth/google"
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import api from "../../services/api";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../../components/ui/Card";
+import AuthLayout from "./AuthLayout";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const navigate = useNavigate()
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  const [email,setEmail] = useState("")
-  const [password,setPassword] = useState("")
-  const [showPwd,setShowPwd] = useState(false)
-  const [loading,setLoading] = useState(false)
-  const [error,setError] = useState("")
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.role);
 
-  const handleLogin = async(e)=>{
-    e.preventDefault()
-
-    setError("")
-    setLoading(true)
-
-    try{
-
-      const res = await api.post("/auth/login",{ email,password })
-
-      localStorage.setItem("token",res.data.accessToken)
-
-      const user = getUserFromToken()
-
-      if(user.role === "job_seeker") navigate("/jobseeker/dashboard")
-      if(user.role === "recruiter") navigate("/recruiter/dashboard")
-      if(user.role === "admin") navigate("/admin/dashboard")
-
+      const rolePath = res.data.role.replace("_", "");
+      navigate(`/${rolePath}/dashboard`);
+    } catch (err) {
+      setError(err.response?.data?.error || "Login failed");
+    } finally {
+      setLoading(false);
     }
-    catch{
-      setError("Invalid email or password")
-    }
-    finally{
-      setLoading(false)
-    }
-  }
+  };
 
-  return(
-
-    <div className="min-h-screen flex bg-slate-50">
-
-      {/* LEFT SIDE */}
-
-      <div className="hidden lg:flex lg:w-1/2 items-center justify-center bg-slate-900 text-white relative overflow-hidden">
-
-        {/* BACKGROUND GLOW */}
-
-        <div className="absolute inset-0 opacity-20">
-
-          <div className="absolute top-20 left-20 w-72 h-72 bg-indigo-500 rounded-full blur-3xl" />
-
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500 rounded-full blur-3xl" />
-
+  return (
+    <AuthLayout>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="text-center mb-8 lg:text-left">
+          <motion.div
+            initial={{ y: -20 }}
+            animate={{ y: 0 }}
+            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 mb-4"
+          >
+            <Lock size={24} />
+          </motion.div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome Back</h1>
+          <p className="text-muted-foreground mt-2">Enter your credentials to access your account</p>
         </div>
 
-        <motion.div
-          initial={{ opacity:0,y:20 }}
-          animate={{ opacity:1,y:0 }}
-          transition={{ duration:0.6 }}
-          className="relative z-10 max-w-md text-center px-8"
-        >
-
-          <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center mx-auto mb-6">
-
-            <Compass size={32}/>
-
-          </div>
-
-          <h2 className="text-3xl font-bold mb-4">
-            Navigate Your Career
-          </h2>
-
-          <p className="text-slate-300 leading-relaxed text-sm">
-            JobCompass connects job seekers with the right opportunities using intelligent matching, resume analysis, and real-time recruiter communication.
-          </p>
-
-        </motion.div>
-
-      </div>
-
-
-      {/* RIGHT SIDE */}
-
-      <div className="flex-1 flex items-center justify-center p-6">
-
-        <motion.div
-          initial={{ opacity:0,y:20 }}
-          animate={{ opacity:1,y:0 }}
-          transition={{ duration:0.4 }}
-          className="w-full max-w-md"
-        >
-
-          {/* MOBILE LOGO */}
-
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
-
-              <Compass size={20}/>
-
-            </div>
-
-            <span className="text-xl font-bold">
-              JobCompass
-            </span>
-
-          </div>
-
-
-          {/* TITLE */}
-
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            Welcome back
-          </h1>
-
-          <p className="text-slate-500 mb-8">
-            Sign in to continue to your dashboard
-          </p>
-
-
-          {/* ERROR */}
-
-          {error && (
-
-            <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
-
-              {error}
-
-            </div>
-
-          )}
-
-
-          {/* GOOGLE LOGIN */}
-
-          <div className="mb-6">
-
-            <GoogleLogin
-              onSuccess={async(credentialResponse)=>{
-
-                try{
-
-                  const res = await api.post("/auth/google-login",{
-                    token: credentialResponse.credential
-                  })
-
-                  localStorage.setItem("token",res.data.accessToken)
-
-                  const user = getUserFromToken()
-
-                  if(user.role === "job_seeker") navigate("/jobseeker/dashboard")
-                  if(user.role === "recruiter") navigate("/recruiter/dashboard")
-                  if(user.role === "admin") navigate("/admin/dashboard")
-
-                }
-                catch{
-                  alert("Google login failed")
-                }
-
-              }}
-              onError={()=>alert("Google login failed")}
-            />
-
-          </div>
-
-
-          {/* DIVIDER */}
-
-          <div className="flex items-center gap-2 mb-6">
-
-            <div className="flex-1 h-px bg-slate-200"/>
-
-            <span className="text-xs text-slate-400">
-              OR
-            </span>
-
-            <div className="flex-1 h-px bg-slate-200"/>
-
-          </div>
-
-
-          {/* FORM */}
-
-          <form onSubmit={handleLogin} className="space-y-4">
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Email
-              </label>
-
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e)=>setEmail(e.target.value)}
-                required
-                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
-
-            </div>
-
-
-            <div>
-
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Password
-              </label>
-
-              <div className="relative">
-
-                <input
-                  type={showPwd ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e)=>setPassword(e.target.value)}
-                  required
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 pr-10 focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-
-                <button
-                  type="button"
-                  onClick={()=>setShowPwd(!showPwd)}
-                  className="absolute right-3 top-2.5 text-slate-400"
+        <Card className="border-border/50 shadow-xl backdrop-blur-sm bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-xl">Login</CardTitle>
+            <CardDescription>Sign in to your JobCompass account</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm"
                 >
-
-                  {showPwd ? <EyeOff size={18}/> : <Eye size={18}/>}
-
-                </button>
-
-              </div>
-
-            </div>
-
-
-            <div className="flex justify-end">
-
-              <Link
-                to="/forgot-password"
-                className="text-xs text-indigo-600 hover:underline"
-              >
-
-                Forgot password?
-
-              </Link>
-
-            </div>
-
-
-            <button
-              disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition"
-            >
-
-              {loading ? (
-
-                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
-
-              ) : (
-
-                <>
-                  Sign In
-                  <ArrowRight size={16}/>
-                </>
-
+                  {error}
+                </motion.div>
               )}
 
-            </button>
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <Input
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
 
-          </form>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium leading-none">Password</label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-primary hover:underline underline-offset-4"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
 
-
-          {/* REGISTER */}
-
-          <p className="text-center text-sm text-slate-500 mt-6">
-
-            Don’t have an account?{" "}
-
-            <Link
-              to="/register"
-              className="font-semibold text-indigo-600 hover:underline"
-            >
-
-              Create account
-
-            </Link>
-
-          </p>
-
-        </motion.div>
-
-      </div>
-
-    </div>
-
-  )
-
+              <Button
+                type="submit"
+                className="w-full h-11"
+                isLoading={loading}
+              >
+                Sign In
+                <ArrowRight size={18} className="ml-2" />
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col border-t border-border/50 pt-6">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link to="/register" className="text-primary font-semibold hover:underline underline-offset-4">
+                Sign up
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    </AuthLayout>
+  );
 }
