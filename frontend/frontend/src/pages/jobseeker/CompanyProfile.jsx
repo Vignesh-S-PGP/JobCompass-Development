@@ -28,7 +28,9 @@ export default function CompanyProfile() {
       api.get("/companies/followed/ids"),
       api.get("/applications/saved/ids")
     ]).then(([companyRes,followRes,savedRes])=>{
-
+      console.log("Company Data:",companyRes);
+      console.log("Fllowed Data:",followRes);
+      console.log("Saved Data:",savedRes);
       setCompany(companyRes.data.company);
       setJobs(companyRes.data.jobs || []);
 
