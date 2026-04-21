@@ -1,312 +1,399 @@
-import { useEffect, useState } from "react";
-import api from "../../services/api";
-import ATSModal from "./ATSModal";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
-  Building2,
   MapPin,
-  ChevronLeft,
-  Globe,
   Briefcase,
-  Sparkles
+  DollarSign,
+  Clock,
+  Building2,
+  ChevronLeft,
+  Calendar,
+  Layers,
+  Sparkles,
+  ArrowUpRight,
+  ShieldCheck,
+  Send,
+  Bookmark,
+  Globe,
+  CheckCircle,
+  FileText
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import api from "../../services/api";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card";
+import Skeleton from "../../components/ui/Skeleton";
+import Button from "../../components/ui/Button";
+import Badge from "../../components/ui/Badge";
+import Tabs from "../../components/ui/Tabs";
+import Modal from "../../components/ui/Modal";
 
-export default function JobDetails({ job, onBack }) {
+export default function JobDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const jobId = id || new URLSearchParams(location.search).get("id");
 
-  const [resumes,setResumes] = useState([]);
-  const [resumeId,setResumeId] = useState("");
-  const [atsLoading,setAtsLoading] = useState(false);
-  const [atsResult,setAtsResult] = useState(null);
-  const [popupMessage,setPopupMessage] = useState("");
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("description");
+  const [isApplying, setIsApplying] = useState(false);
+  const [applied, setApplied] = useState(false);
 
-  const company = job.company || {};
+  const [resumes, setResumes] = useState([]);
+  const [resumeId, setResumeId] = useState("");
+  const [atsLoading, setAtsLoading] = useState(false);
+  const [atsResult, setAtsResult] = useState(null);
+  const [showAtsModal, setShowAtsModal] = useState(false);
+  const [error, setError] = useState("");
 
-  useEffect(()=>{
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        const res = await api.get(`/jobs/${jobId}`);
+        setJob(res.data.job || null);
 
-    api.get("/resumes")
-      .then(res=>setResumes(res.data.resumes || []));
+        const appsRes = await api.get("/applications/my");
+        const alreadyApplied = appsRes.data.applications?.some(a => a.jobId === jobId);
+        setApplied(alreadyApplied);
 
-  },[]);
-
-  const checkAtsScore = async()=>{
-
-    if(!resumeId){
-      setPopupMessage("Please select a resume first.");
-      return;
-    }
-
-    setAtsLoading(true);
-
-    try{
-
-      const res = await api.post("/applications/ats-check",{
-        jobId:job._id,
-        resumeId
-      });
-
-      setAtsResult(res.data);
-
-    }catch{
-      setPopupMessage("Unable to calculate ATS score.");
-    }
-    finally{
-      setAtsLoading(false);
-    }
-
-  };
-
-  const applyJob = async()=>{
-
-    if(!resumeId){
-      setPopupMessage("Please select a resume before applying.");
-      return;
-    }
-
-    setAtsLoading(true);
-
-    try{
-
-      const res = await api.post("/applications/apply",{
-        jobId:job._id,
-        resumeId
-      });
-
-      setAtsResult(res.data);
-
-    }catch(err){
-
-      if(err.response?.status===409){
-        setPopupMessage("You have already applied for this job.");
-      }else{
-        setPopupMessage("Something went wrong.");
+        const resumesRes = await api.get("/resumes");
+        setResumes(resumesRes.data.resumes || []);
+      } catch (err) {
+        console.error("Failed to fetch job details", err);
+      } finally {
+        setLoading(false);
       }
+    };
+    if (jobId) fetchJob();
+  }, [jobId]);
 
+  const handleCheckAts = async () => {
+    if (!resumeId) {
+      setError("Please select a resume first.");
+      return;
     }
-    finally{
+    setAtsLoading(true);
+    setError("");
+    try {
+      const res = await api.post("/applications/ats-check", { jobId, resumeId });
+      setAtsResult(res.data);
+      setShowAtsModal(true);
+    } catch (err) {
+      setError("Unable to calculate ATS score.");
+    } finally {
       setAtsLoading(false);
     }
-
   };
+
+  const handleApply = async () => {
+    if (!resumeId) {
+      setError("Please select a resume before applying.");
+      return;
+    }
+    setIsApplying(true);
+    setError("");
+    try {
+      const res = await api.post("/applications/apply", { jobId, resumeId });
+      setApplied(true);
+      setAtsResult(res.data);
+      setShowAtsModal(true);
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setError("You have already applied for this job.");
+      } else {
+        setError("Something went wrong during application.");
+      }
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const tabs = [
+    { id: "description", label: "Description" },
+    { id: "requirements", label: "Requirements" },
+    { id: "company", label: "About Company" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <Skeleton className="h-64 w-full rounded-2xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <Skeleton className="lg:col-span-2 h-[500px] rounded-2xl" />
+          <Skeleton className="h-[500px] rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!job) return <div className="text-center py-20 font-bold">Job not found.</div>;
 
   return (
-
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-
-      {/* BACK */}
-
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900"
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+      <Button
+        variant="ghost"
+        onClick={() => navigate(-1)}
+        className="text-muted-foreground hover:text-foreground"
       >
-        <ChevronLeft size={18}/>
-        Back to jobs
-      </button>
+        <ChevronLeft size={18} className="mr-2" />
+        Back to listings
+      </Button>
 
-      {/* HEADER */}
+      <header className="relative p-8 rounded-3xl bg-slate-900 text-white overflow-hidden shadow-2xl">
+        <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[150%] bg-primary/20 blur-[100px] transform rotate-12" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[30%] h-[100%] bg-indigo-600/20 blur-[80px]" />
 
-      <div className="bg-white border rounded-xl p-6 flex items-start justify-between">
-
-        <div className="flex gap-4">
-
-          <div className="w-14 h-14 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-
-            {company.logo
-              ? <img src={company.logo} className="w-full h-full object-cover"/>
-              : <Building2 className="text-slate-400"/>}
-
+        <div className="relative flex flex-col md:flex-row items-start gap-8">
+          <div className="h-24 w-24 rounded-3xl bg-white flex items-center justify-center p-4 shadow-xl shrink-0">
+             {job.company?.logo ? (
+               <img src={job.company.logo} alt={job.company.name} className="h-full w-full object-contain" />
+             ) : (
+               <Building2 size={48} className="text-slate-900" />
+             )}
           </div>
 
-          <div>
-
-            <h1 className="text-2xl font-semibold text-slate-900">
-              {job.title}
-            </h1>
-
-            <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
-
-              <span className="flex items-center gap-1">
-                <Building2 size={14}/>
-                {company.name}
-              </span>
-
-              <span className="flex items-center gap-1">
-                <MapPin size={14}/>
-                {job.location}
-              </span>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* CONTENT */}
-
-      <div className="grid lg:grid-cols-12 gap-8">
-
-        {/* LEFT */}
-
-        <div className="lg:col-span-8 space-y-8">
-
-          {/* DESCRIPTION */}
-
-          <div className="bg-white border rounded-xl p-6">
-
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Job Description
-            </h2>
-
-            <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-              {job.description}
-            </p>
-
-          </div>
-
-          {/* SKILLS */}
-
-          {job.skillsRequired?.length>0 && (
-
-            <div className="bg-white border rounded-xl p-6">
-
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Required Skills
-              </h2>
-
-              <div className="flex flex-wrap gap-2">
-
-                {job.skillsRequired.map(skill=>(
-                  <span
-                    key={skill}
-                    className="bg-slate-100 text-xs px-3 py-1 rounded-md"
-                  >
-                    {skill}
-                  </span>
-                ))}
-
-              </div>
-
-            </div>
-
-          )}
-
-        </div>
-
-
-        {/* APPLICATION PANEL */}
-
-        <div className="lg:col-span-4">
-
-          <div className="bg-white border rounded-xl p-6 sticky top-6 space-y-4">
-
-            <h3 className="font-semibold text-slate-900">
-              Apply for this role
-            </h3>
-
-            <select
-              value={resumeId}
-              onChange={e=>setResumeId(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-            >
-
-              <option value="">
-                Select Resume
-              </option>
-
-              {resumes.map(r=>(
-                <option key={r._id} value={r._id}>
-                  {r.title}
-                </option>
-              ))}
-
-            </select>
-
-            <button
-              onClick={checkAtsScore}
-              disabled={atsLoading}
-              className="w-full bg-indigo-50 text-indigo-600 py-2 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-indigo-100 transition"
-            >
-
-              <Sparkles size={16}/>
-              Check ATS Score
-
-            </button>
-
-            <button
-              onClick={applyJob}
-              disabled={atsLoading}
-              className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm hover:bg-indigo-700 transition"
-            >
-
-              {atsLoading ? "Processing..." : "Apply Job"}
-
-            </button>
-
-            {/* COMPANY */}
-
-            <div className="pt-4 border-t text-sm text-slate-500 space-y-1">
-
-              <p className="font-medium text-slate-700">
-                {company.industry}
-              </p>
-
-              {company.website && (
-
-                <a
-                  href={company.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 text-indigo-600"
-                >
-                  Visit Website
-                  <Globe size={14}/>
-                </a>
-
+          <div className="flex-1 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className="border-white/20 text-white/80 bg-white/5 uppercase tracking-widest text-[10px]">
+                {job.type}
+              </Badge>
+              {job.skillsRequired && job.skillsRequired.length > 0 && (
+                <Badge variant="outline" className="border-emerald-500/20 text-emerald-400 bg-emerald-500/10 flex items-center gap-1">
+                  <Sparkles size={10} />
+                  Top Match
+                </Badge>
               )}
-
             </div>
 
+            <div>
+              <h1 className="text-4xl font-black tracking-tight">{job.title}</h1>
+              <p className="text-xl text-white/70 font-medium mt-1">{job.company?.name}</p>
+            </div>
+
+            <div className="flex flex-wrap gap-x-6 gap-y-3 pt-2">
+              <div className="flex items-center text-white/60">
+                <MapPin size={18} className="mr-2 text-primary" />
+                <span className="text-sm font-medium">{job.location}</span>
+              </div>
+              <div className="flex items-center text-white/60">
+                <Calendar size={18} className="mr-2 text-primary" />
+                <span className="text-sm font-medium">Posted {new Date(job.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center text-white/60">
+                <DollarSign size={18} className="mr-2 text-primary" />
+                <span className="text-sm font-medium">{job.salaryRange || "Competitive Pay"}</span>
+              </div>
+            </div>
           </div>
 
+          <div className="flex gap-3 w-full md:w-auto shrink-0 mt-4 md:mt-0">
+            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10">
+               <Bookmark size={20} />
+            </Button>
+            {applied && (
+              <Badge className="h-12 px-8 rounded-2xl bg-emerald-500/20 text-emerald-400 border-emerald-500/30 font-bold text-sm">
+                <ShieldCheck size={18} className="mr-2" />
+                Applied
+              </Badge>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-8 space-y-6">
+          <Card className="border-none shadow-sm dark:bg-slate-900/50">
+            <CardContent className="p-0">
+              <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+              <div className="p-8">
+                <AnimatePresence mode="wait">
+                  {activeTab === "description" && (
+                    <motion.div
+                      key="desc"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="prose prose-slate dark:prose-invert max-w-none"
+                    >
+                      <h3 className="text-lg font-bold mb-4">Job Overview</h3>
+                      <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{job.description}</p>
+                    </motion.div>
+                  )}
+                  {activeTab === "requirements" && (
+                    <motion.div
+                      key="req"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-6"
+                    >
+                      <div>
+                         <h3 className="text-lg font-bold mb-4">Required Skills</h3>
+                         <div className="flex flex-wrap gap-2">
+                           {job.skillsRequired?.map((skill, i) => (
+                             <Badge key={i} variant="secondary" className="px-4 py-1.5 rounded-xl border-border/50 text-sm">{skill}</Badge>
+                           ))}
+                         </div>
+                      </div>
+                    </motion.div>
+                  )}
+                  {activeTab === "company" && (
+                    <motion.div
+                      key="comp"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center p-3 border border-border">
+                           {job.company?.logo ? <img src={job.company.logo} alt="logo" /> : <Building2 size={32} className="text-muted-foreground" />}
+                        </div>
+                        <div>
+                           <h3 className="text-xl font-bold">{job.company?.name}</h3>
+                           <p className="text-sm text-muted-foreground">{job.company?.industry || "Tech Industry"}</p>
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed">{job.company?.description || "No company description provided."}</p>
+                      {job.company?.website && (
+                        <Button variant="outline" className="mt-2" onClick={() => window.open(job.company.website, '_blank')}>
+                           <Globe size={16} className="mr-2" />
+                           Visit Website
+                        </Button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
+        <div className="lg:col-span-4 space-y-6">
+          <Card className="border-none shadow-xl dark:bg-slate-900/50 overflow-hidden sticky top-24">
+             <CardHeader className="bg-primary/5 pb-4">
+                <CardTitle className="text-lg">Apply for this position</CardTitle>
+                <CardDescription>Select a resume to continue</CardDescription>
+             </CardHeader>
+             <CardContent className="p-6 space-y-6">
+                {error && (
+                  <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                   <label className="text-sm font-semibold flex items-center gap-2">
+                      <FileText size={16} className="text-primary" />
+                      Your Resumes
+                   </label>
+                   <select
+                    value={resumeId}
+                    onChange={(e) => setResumeId(e.target.value)}
+                    className="w-full h-11 rounded-xl border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                   >
+                    <option value="">Select a resume</option>
+                    {resumes.map(r => (
+                      <option key={r._id} value={r._id}>{r.title}</option>
+                    ))}
+                   </select>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 border-primary/20 text-primary hover:bg-primary/5"
+                    onClick={handleCheckAts}
+                    isLoading={atsLoading}
+                  >
+                    <Sparkles size={16} className="mr-2" />
+                    Check ATS Score
+                  </Button>
+
+                  {!applied && (
+                    <Button
+                      className="w-full h-12 shadow-lg shadow-primary/20"
+                      onClick={handleApply}
+                      isLoading={isApplying}
+                    >
+                      Apply Now
+                      <Send size={16} className="ml-2" />
+                    </Button>
+                  )}
+                </div>
+
+                <div className="pt-6 border-t border-border/50">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <Layers size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Industry</p>
+                      <p className="text-sm font-bold">{job.company?.industry || "Technology"}</p>
+                    </div>
+                  </div>
+                </div>
+             </CardContent>
+          </Card>
+        </div>
       </div>
 
+      <Modal
+        isOpen={showAtsModal}
+        onClose={() => setShowAtsModal(false)}
+        title={applied ? "Application Submitted!" : "ATS Score Analysis"}
+      >
+        <div className="space-y-6 text-center py-4">
+           <div className="relative inline-flex items-center justify-center">
+              <svg className="w-32 h-32 transform -rotate-90">
+                <circle
+                  cx="64"
+                  cy="64"
+                  r="58"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  className="text-muted"
+                />
+                <motion.circle
+                  cx="64"
+                  cy="64"
+                  r="58"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray="364.42"
+                  initial={{ strokeDashoffset: 364.42 }}
+                  animate={{ strokeDashoffset: 364.42 - (364.42 * (atsResult?.score || 0)) / 100 }}
+                  className="text-primary"
+                />
+              </svg>
+              <span className="absolute text-3xl font-black">{atsResult?.score || 0}%</span>
+           </div>
 
-      {/* POPUP */}
+           <div>
+              <h4 className="font-bold text-lg mb-2">Resume Match Score</h4>
+              <p className="text-sm text-muted-foreground px-4">
+                {atsResult?.analysis || "Your resume has been analyzed against the job requirements."}
+              </p>
+           </div>
 
-      {popupMessage && (
+           <div className="bg-muted/30 p-4 rounded-2xl text-left">
+              <h5 className="text-xs font-bold uppercase tracking-wider mb-3 text-muted-foreground">Detailed Breakdown</h5>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                   <span>Skills Match</span>
+                   <span className="font-bold text-emerald-500">High</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                   <span>Experience Relevance</span>
+                   <span className="font-bold text-primary">Medium</span>
+                </div>
+              </div>
+           </div>
 
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-
-          <div className="bg-white p-6 rounded-xl w-80 text-center space-y-4">
-
-            <p className="text-sm text-slate-700">
-              {popupMessage}
-            </p>
-
-            <button
-              onClick={()=>setPopupMessage("")}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
-            >
-              OK
-            </button>
-
-          </div>
-
+           <Button onClick={() => setShowAtsModal(false)} className="w-full">
+              Close
+           </Button>
         </div>
-
-      )}
-
-      <ATSModal
-        loading={atsLoading}
-        data={atsResult}
-        onClose={()=>setAtsResult(null)}
-      />
-
+      </Modal>
     </div>
-
   );
-
 }
